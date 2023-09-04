@@ -1,8 +1,8 @@
 package contracts
 
 import (
-	"github.com/ESSantana/jogo-do-bicho/internal/common/entities/dto"
-	vm "github.com/ESSantana/jogo-do-bicho/internal/common/entities/viewmodel"
+	"github.com/ESSantana/jogo-do-bicho/internal/entities/dto"
+	vm "github.com/ESSantana/jogo-do-bicho/internal/entities/viewmodel"
 )
 
 type BetService interface {
