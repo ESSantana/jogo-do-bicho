@@ -17,6 +17,12 @@ func newBetRepository(sqlcQueries *db.Queries) contracts.BetRepository {
 	}
 }
 
-func (r *BetRepository) test(ctx context.Context) {
-	r.sqlcQueries.GetBet(ctx)
+func (r *BetRepository) CreateBet(ctx context.Context, bet db.CreateBetParams) (db.Bet, error) {
+	createdBet, err := r.sqlcQueries.CreateBet(ctx, bet)
+	return createdBet, err
+}
+
+func (r *BetRepository) GetAllBets(ctx context.Context) ([]db.GetBetsRow, error) {
+	createdBet, err := r.sqlcQueries.GetBets(ctx)
+	return createdBet, err
 }

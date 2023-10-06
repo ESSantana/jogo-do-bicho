@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:alpine
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: jogo-do-bicho
+    volumes:
+      - ./sql/:/var/lib/postgres
+    networks:
+      - main
+
+  api:
+    build: ./
+    container_name: jogo-do-bicho
+    restart: always
+    env_file:
+      - ./.env
+    ports:
+      - 8080:8080
+    depends_on:
+      - db
+    networks:
+      - main
+
+networks:
+  main:

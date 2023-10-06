@@ -1,5 +1,5 @@
 version: "2"
-sql: 
+sql:
   - engine: "postgresql"
     schema: "sql/schemas/"
     queries: "sql/queries/"
@@ -7,3 +7,7 @@ sql:
       go:
         package: "db"
         out: "internal/repositories/db"
+        sql_package: pgx/v5
+        emit_db_tags: true
+        emit_json_tags: true
+        json_tags_case_style: "snake"  

@@ -2,31 +2,30 @@ package repositories
 
 import (
 	"context"
-	"database/sql"
+	"os"
 
 	"github.com/ESSantana/jogo-do-bicho/internal/repositories/contracts"
 	"github.com/ESSantana/jogo-do-bicho/internal/repositories/db"
+	"github.com/jackc/pgx/v5"
 )
 
 type RepositoryManager struct {
-	sqlcQueries *db.Queries
+	queries *db.Queries
 }
 
 func NewRepositoryManager(ctx context.Context) *RepositoryManager {
-	dbconn, err := sql.Open("postgresql", "")
+	conn, err := pgx.Connect(ctx, os.Getenv("DATABASE_URL"))
 	if err != nil {
 		panic(err)
 	}
 
-	defer dbconn.Close()
-
-	dbQueries := db.New(dbconn)
+	queries := db.New(conn)
 
 	return &RepositoryManager{
-		sqlcQueries: dbQueries,
+		queries: queries,
 	}
 }
 
 func (manager *RepositoryManager) NewBetRepository() contracts.BetRepository {
-	return newBetRepository(manager.sqlcQueries)
+	return newBetRepository(manager.queries)
 }

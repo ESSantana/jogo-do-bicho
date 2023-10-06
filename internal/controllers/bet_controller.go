@@ -1,70 +1,121 @@
 package controllers
 
 import (
+	"context"
 	"encoding/json"
-	"log"
+	"fmt"
+	"io"
+
+	// "log"
 	"net/http"
+	"time"
 
 	"github.com/ESSantana/jogo-do-bicho/internal/controllers/contracts"
+	"github.com/ESSantana/jogo-do-bicho/internal/entities/dto"
+	svc_contracts "github.com/ESSantana/jogo-do-bicho/internal/services/contracts"
+	"github.com/ESSantana/jogo-do-bicho/internal/utils"
 )
 
 type BetController struct {
-	logger *log.Logger
+	// logger         *log.Logger
+	serviceManager svc_contracts.ServiceManager
 }
 
-
-func NewBetController(logger *log.Logger) contracts.BetController {
+func NewBetController( /*logger *log.Logger,*/ serviceManager svc_contracts.ServiceManager) contracts.BetController {
 	return &BetController{
-		logger: logger,
+		// logger:         logger,
+		serviceManager: serviceManager,
 	}
 }
 
-func (controller *BetController) GetAll(response http.ResponseWriter, request *http.Request) {
-	a := map[string]interface{}{
-		"response": true,
+func (ctlr *BetController) Create(response http.ResponseWriter, request *http.Request) {
+	betService := ctlr.serviceManager.NewBetService()
+	ctx, cancel := context.WithTimeout(request.Context(), 1*time.Second)
+	defer cancel()
+
+	var betDTO dto.Bet
+	body, err := io.ReadAll(request.Body)
+	if err != nil {
+		responseBody := map[string]interface{}{
+			"message": "bet payload malformed",
+		}
+		utils.CreateResponse(&response, http.StatusBadRequest, responseBody)
+		return
 	}
-	byted, _ := json.Marshal(a)
-	response.Header().Set("Content-Type", "application/json")
-	response.Write(byted)
-	controller.logger.Println("All")
+
+	err = json.Unmarshal(body, &betDTO)
+	if err != nil {
+		responseBody := map[string]interface{}{
+			"message": "bet payload malformed",
+		}
+		utils.CreateResponse(&response, http.StatusBadRequest, responseBody)
+		return
+	}
+
+	vm, err := betService.Create(ctx, betDTO)
+	if err != nil {
+		responseBody := map[string]interface{}{
+			"message": "error creating new bet",
+		}
+		utils.CreateResponse(&response, http.StatusInternalServerError, responseBody)
+		return
+	}
+
+	responseBody := map[string]interface{}{
+		"id":   vm.ID,
+		"data": vm,
+	}
+	utils.CreateResponse(&response, http.StatusCreated, responseBody)
 }
 
-func (controller *BetController) Get(response http.ResponseWriter, request *http.Request) {
-	a := map[string]interface{}{
-		"response": true,
+func (ctlr *BetController) GetAll(response http.ResponseWriter, request *http.Request) {
+	betService := ctlr.serviceManager.NewBetService()
+	ctx, cancel := context.WithTimeout(request.Context(), 1*time.Second)
+	defer cancel()
+
+	vm, err := betService.GetAllBets(ctx)
+	if err != nil {
+		responseBody := map[string]interface{}{
+			"message": "error getting all bets",
+		}
+		utils.CreateResponse(&response, http.StatusInternalServerError, responseBody)
+		return
 	}
-	byted, _ := json.Marshal(a)
-	response.Header().Set("Content-Type", "application/json")
-	response.Write(byted)
-	controller.logger.Println("All")
+
+	if len(vm) < 1 {
+		utils.CreateResponse(&response, http.StatusNoContent, nil)
+		return
+	}
+
+	responseBody := map[string]interface{}{
+		"data": vm,
+	}
+	utils.CreateResponse(&response, http.StatusOK, responseBody)
 }
 
-func (controller *BetController) Create(response http.ResponseWriter, request *http.Request) {
-	a := map[string]interface{}{
-		"response": true,
-	}
-	byted, _ := json.Marshal(a)
-	response.Header().Set("Content-Type", "application/json")
-	response.Write(byted)
-	controller.logger.Println("All")
-}
+func (ctlr *BetController) Get(response http.ResponseWriter, request *http.Request) {
 
-func (controller *BetController) Update(response http.ResponseWriter, request *http.Request) {
-	a := map[string]interface{}{
-		"response": true,
-	}
-	byted, _ := json.Marshal(a)
-	response.Header().Set("Content-Type", "application/json")
-	response.Write(byted)
-	controller.logger.Println("All")
-}
+	fmt.Println(request.RequestURI)
+	// betService := ctlr.serviceManager.NewBetService()
+	// ctx, cancel := context.WithTimeout(request.Context(), 1*time.Second)
+	// defer cancel()
 
-func (controller *BetController) Delete(response http.ResponseWriter, request *http.Request) {
-	a := map[string]interface{}{
-		"response": true,
-	}
-	byted, _ := json.Marshal(a)
-	response.Header().Set("Content-Type", "application/json")
-	response.Write(byted)
-	controller.logger.Println("All")
+	// vm, err := betService.GetAllBets(ctx)
+	// if err != nil {
+	// 	responseBody := map[string]interface{}{
+	// 		"message": "error getting all bets",
+	// 	}
+	// 	utils.CreateResponse(&response, http.StatusInternalServerError, responseBody)
+	// 	return
+	// }
+
+	// if len(vm) < 1 {
+	// 	utils.CreateResponse(&response, http.StatusNoContent, nil)
+	// 	return
+	// }
+
+	// responseBody := map[string]interface{}{
+	// 	"data": vm,
+	// }
+	// utils.CreateResponse(&response, http.StatusOK, responseBody)
 }
