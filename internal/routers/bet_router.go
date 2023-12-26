@@ -12,4 +12,6 @@ func ConfigBetRouter(router *chi.Mux, serviceManager svc_contracts.ServiceManage
 	router.Get("/bet", controller.GetAll)
 	router.Get("/bet?id={id}", controller.Get)
 	router.Post("/bet", controller.Create)
+	router.Put("/bet", controller.Update)
+	router.Delete("/bet", controller.Delete)
 }

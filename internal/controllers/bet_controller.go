@@ -2,9 +2,8 @@ package controllers
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
+	"strconv"
 
 	// "log"
 	"net/http"
@@ -15,6 +14,8 @@ import (
 	svc_contracts "github.com/ESSantana/jogo-do-bicho/internal/services/contracts"
 	"github.com/ESSantana/jogo-do-bicho/internal/utils"
 )
+
+var betService svc_contracts.BetService
 
 type BetController struct {
 	// logger         *log.Logger
@@ -29,26 +30,12 @@ func NewBetController( /*logger *log.Logger,*/ serviceManager svc_contracts.Serv
 }
 
 func (ctlr *BetController) Create(response http.ResponseWriter, request *http.Request) {
-	betService := ctlr.serviceManager.NewBetService()
+	ctlr.getService()
 	ctx, cancel := context.WithTimeout(request.Context(), 1*time.Second)
 	defer cancel()
 
-	var betDTO dto.Bet
-	body, err := io.ReadAll(request.Body)
-	if err != nil {
-		responseBody := map[string]interface{}{
-			"message": "bet payload malformed",
-		}
-		utils.CreateResponse(&response, http.StatusBadRequest, responseBody)
-		return
-	}
-
-	err = json.Unmarshal(body, &betDTO)
-	if err != nil {
-		responseBody := map[string]interface{}{
-			"message": "bet payload malformed",
-		}
-		utils.CreateResponse(&response, http.StatusBadRequest, responseBody)
+	betDTO := utils.ReadBody[dto.Bet](request, response)
+	if betDTO.BetType == "" {
 		return
 	}
 
@@ -69,7 +56,7 @@ func (ctlr *BetController) Create(response http.ResponseWriter, request *http.Re
 }
 
 func (ctlr *BetController) GetAll(response http.ResponseWriter, request *http.Request) {
-	betService := ctlr.serviceManager.NewBetService()
+	ctlr.getService()
 	ctx, cancel := context.WithTimeout(request.Context(), 1*time.Second)
 	defer cancel()
 
@@ -94,6 +81,42 @@ func (ctlr *BetController) GetAll(response http.ResponseWriter, request *http.Re
 }
 
 func (ctlr *BetController) Get(response http.ResponseWriter, request *http.Request) {
+	ctlr.getService()
+	ctx, cancel := context.WithTimeout(request.Context(), 1*time.Second)
+	defer cancel()
+
+	queryValues := request.URL.Query()
+	unparsedID := queryValues["id"][0]
+	id, err := strconv.Atoi(unparsedID)
+	if err != nil {
+		responseBody := map[string]interface{}{
+			"message": "id format not supported",
+		}
+		utils.CreateResponse(&response, http.StatusBadRequest, responseBody)
+		return
+	}
+
+	vm, err := betService.GetByID(ctx, int32(id))
+	if err != nil {
+		responseBody := map[string]interface{}{
+			"message": "error getting bet by id",
+		}
+		utils.CreateResponse(&response, http.StatusInternalServerError, responseBody)
+		return
+	}
+
+	if vm.ID == 0 {
+		utils.CreateResponse(&response, http.StatusNoContent, nil)
+		return
+	}
+
+	responseBody := map[string]interface{}{
+		"data": vm,
+	}
+	utils.CreateResponse(&response, http.StatusOK, responseBody)
+}
+
+func (ctlr *BetController) Update(response http.ResponseWriter, request *http.Request) {
 
 	fmt.Println(request.RequestURI)
 	// betService := ctlr.serviceManager.NewBetService()
@@ -118,4 +141,39 @@ func (ctlr *BetController) Get(response http.ResponseWriter, request *http.Reque
 	// 	"data": vm,
 	// }
 	// utils.CreateResponse(&response, http.StatusOK, responseBody)
+}
+
+func (ctlr *BetController) Delete(response http.ResponseWriter, request *http.Request) {
+
+	fmt.Println(request.RequestURI)
+	// betService := ctlr.serviceManager.NewBetService()
+	// ctx, cancel := context.WithTimeout(request.Context(), 1*time.Second)
+	// defer cancel()
+
+	// vm, err := betService.GetAllBets(ctx)
+	// if err != nil {
+	// 	responseBody := map[string]interface{}{
+	// 		"message": "error getting all bets",
+	// 	}
+	// 	utils.CreateResponse(&response, http.StatusInternalServerError, responseBody)
+	// 	return
+	// }
+
+	// if len(vm) < 1 {
+	// 	utils.CreateResponse(&response, http.StatusNoContent, nil)
+	// 	return
+	// }
+
+	// responseBody := map[string]interface{}{
+	// 	"data": vm,
+	// }
+	// utils.CreateResponse(&response, http.StatusOK, responseBody)
+}
+
+func (ctlr *BetController) getService() {
+	if betService != nil {
+		return
+	}
+
+	betService = ctlr.serviceManager.NewBetService()
 }

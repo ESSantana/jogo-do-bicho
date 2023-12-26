@@ -8,9 +8,9 @@ import (
 )
 
 type BetService interface {
-	GetAllBets(ctx context.Context) (allBets []vm.Bet, err error)
-	// Get(id string) []vm.Bet
-	Create(ctx context.Context, bet dto.Bet) (vm.Bet, error)
-	// Update(bet dto.Bet) vm.Bet
-	// Delete(id string) bool
+	GetAllBets(ctx context.Context) (bets []vm.Bet, err error)
+	GetByID(ctx context.Context, id int32) (bet vm.Bet, err error)
+	Create(ctx context.Context, bet dto.Bet) (betVm vm.Bet, err error)
+	// Update(bet dto.Bet) (betVM vm.Bet, err error)
+	// Delete(id string) (deleted bool, err error)
 }

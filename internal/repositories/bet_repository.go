@@ -26,3 +26,8 @@ func (r *BetRepository) GetAllBets(ctx context.Context) ([]db.GetBetsRow, error)
 	createdBet, err := r.sqlcQueries.GetBets(ctx)
 	return createdBet, err
 }
+
+func (r *BetRepository) GetByID(ctx context.Context, id int32) (db.GetBetRow, error) {
+	bet, err := r.sqlcQueries.GetBet(ctx, id)
+	return bet, err
+}

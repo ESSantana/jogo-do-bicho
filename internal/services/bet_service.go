@@ -69,3 +69,70 @@ func (svc *BetService) GetAllBets(ctx context.Context) (allBets []vm.Bet, err er
 	}
 	return allBets, nil
 }
+
+func (svc *BetService) GetByID(ctx context.Context, id int32) (bet vm.Bet, err error) {
+	betRepo := svc.repoManager.NewBetRepository()
+	betPersisted, err := betRepo.GetByID(ctx, id)
+	if err != nil {
+		return bet, err
+	}
+
+	bet = vm.Bet{
+		ID:        int(betPersisted.Bet.ID),
+		BetType:   betPersisted.Bet.BetType,
+		BetPrice:  betPersisted.Bet.BetPrice,
+		BetChoice: betPersisted.Bet.BetChoice,
+		Gambler: vm.Gambler{
+			ID:   betPersisted.Gambler.ID,
+			Name: betPersisted.Gambler.GamblerName,
+		},
+	}
+
+	return bet, nil
+}
+
+// func (svc *BetService) Update(ctx context.Context) (allBets []vm.Bet, err error) {
+// 	betRepo := svc.repoManager.NewBetRepository()
+// 	items, err := betRepo.GetAllBets(ctx)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	allBets = make([]vm.Bet, 0)
+// 	for _, item := range items {
+// 		allBets = append(allBets, vm.Bet{
+// 			ID:        int(item.Bet.ID),
+// 			BetType:   item.Bet.BetType,
+// 			BetPrice:  item.Bet.BetPrice,
+// 			BetChoice: item.Bet.BetChoice,
+// 			Gambler: vm.Gambler{
+// 				ID:   item.Gambler.ID,
+// 				Name: item.Gambler.GamblerName,
+// 			},
+// 		})
+// 	}
+// 	return allBets, nil
+// }
+
+// func (svc *BetService) Delete(ctx context.Context) (allBets []vm.Bet, err error) {
+// 	betRepo := svc.repoManager.NewBetRepository()
+// 	items, err := betRepo.GetAllBets(ctx)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	allBets = make([]vm.Bet, 0)
+// 	for _, item := range items {
+// 		allBets = append(allBets, vm.Bet{
+// 			ID:        int(item.Bet.ID),
+// 			BetType:   item.Bet.BetType,
+// 			BetPrice:  item.Bet.BetPrice,
+// 			BetChoice: item.Bet.BetChoice,
+// 			Gambler: vm.Gambler{
+// 				ID:   item.Gambler.ID,
+// 				Name: item.Gambler.GamblerName,
+// 			},
+// 		})
+// 	}
+// 	return allBets, nil
+// }
