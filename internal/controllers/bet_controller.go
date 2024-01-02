@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 
 	// "log"
@@ -60,7 +59,7 @@ func (ctlr *BetController) GetAll(response http.ResponseWriter, request *http.Re
 	ctx, cancel := context.WithTimeout(request.Context(), 1*time.Second)
 	defer cancel()
 
-	vm, err := betService.GetAllBets(ctx)
+	vm, err := betService.GetAll(ctx)
 	if err != nil {
 		responseBody := map[string]interface{}{
 			"message": "error getting all bets",
@@ -117,57 +116,59 @@ func (ctlr *BetController) Get(response http.ResponseWriter, request *http.Reque
 }
 
 func (ctlr *BetController) Update(response http.ResponseWriter, request *http.Request) {
+	ctlr.getService()
+	ctx, cancel := context.WithTimeout(request.Context(), 1*time.Second)
+	defer cancel()
 
-	fmt.Println(request.RequestURI)
-	// betService := ctlr.serviceManager.NewBetService()
-	// ctx, cancel := context.WithTimeout(request.Context(), 1*time.Second)
-	// defer cancel()
+	betDTO := utils.ReadBody[dto.Bet](request, response)
+	if betDTO.BetType == "" {
+		return
+	}
 
-	// vm, err := betService.GetAllBets(ctx)
-	// if err != nil {
-	// 	responseBody := map[string]interface{}{
-	// 		"message": "error getting all bets",
-	// 	}
-	// 	utils.CreateResponse(&response, http.StatusInternalServerError, responseBody)
-	// 	return
-	// }
+	updated, err := betService.Update(ctx, betDTO)
+	if err != nil {
+		responseBody := map[string]interface{}{
+			"message": "error updating bet",
+		}
+		utils.CreateResponse(&response, http.StatusInternalServerError, responseBody)
+		return
+	}
 
-	// if len(vm) < 1 {
-	// 	utils.CreateResponse(&response, http.StatusNoContent, nil)
-	// 	return
-	// }
-
-	// responseBody := map[string]interface{}{
-	// 	"data": vm,
-	// }
-	// utils.CreateResponse(&response, http.StatusOK, responseBody)
+	responseBody := map[string]interface{}{
+		"updated": updated,
+	}
+	utils.CreateResponse(&response, http.StatusCreated, responseBody)
 }
 
 func (ctlr *BetController) Delete(response http.ResponseWriter, request *http.Request) {
+	ctlr.getService()
+	ctx, cancel := context.WithTimeout(request.Context(), 1*time.Second)
+	defer cancel()
 
-	fmt.Println(request.RequestURI)
-	// betService := ctlr.serviceManager.NewBetService()
-	// ctx, cancel := context.WithTimeout(request.Context(), 1*time.Second)
-	// defer cancel()
+	queryValues := request.URL.Query()
+	unparsedID := queryValues["id"][0]
+	id, err := strconv.Atoi(unparsedID)
+	if err != nil {
+		responseBody := map[string]interface{}{
+			"message": "id format not supported",
+		}
+		utils.CreateResponse(&response, http.StatusBadRequest, responseBody)
+		return
+	}
 
-	// vm, err := betService.GetAllBets(ctx)
-	// if err != nil {
-	// 	responseBody := map[string]interface{}{
-	// 		"message": "error getting all bets",
-	// 	}
-	// 	utils.CreateResponse(&response, http.StatusInternalServerError, responseBody)
-	// 	return
-	// }
+	deleted, err := betService.Delete(ctx, int32(id))
+	if err != nil {
+		responseBody := map[string]interface{}{
+			"message": "error deleting bet",
+		}
+		utils.CreateResponse(&response, http.StatusInternalServerError, responseBody)
+		return
+	}
 
-	// if len(vm) < 1 {
-	// 	utils.CreateResponse(&response, http.StatusNoContent, nil)
-	// 	return
-	// }
-
-	// responseBody := map[string]interface{}{
-	// 	"data": vm,
-	// }
-	// utils.CreateResponse(&response, http.StatusOK, responseBody)
+	responseBody := map[string]interface{}{
+		"deleted": deleted,
+	}
+	utils.CreateResponse(&response, http.StatusOK, responseBody)
 }
 
 func (ctlr *BetController) getService() {

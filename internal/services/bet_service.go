@@ -2,12 +2,15 @@ package services
 
 import (
 	"context"
+	"errors"
+	"time"
 
 	"github.com/ESSantana/jogo-do-bicho/internal/entities/dto"
 	vm "github.com/ESSantana/jogo-do-bicho/internal/entities/viewmodel"
 	repo_contracts "github.com/ESSantana/jogo-do-bicho/internal/repositories/contracts"
 	"github.com/ESSantana/jogo-do-bicho/internal/repositories/db"
 	"github.com/ESSantana/jogo-do-bicho/internal/services/contracts"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type BetService struct {
@@ -29,7 +32,7 @@ func (svc *BetService) Create(ctx context.Context, bet dto.Bet) (createdBet vm.B
 	}
 
 	betRepo := svc.repoManager.NewBetRepository()
-	persistedBet, err := betRepo.CreateBet(ctx, betParams)
+	persistedBet, err := betRepo.Create(ctx, betParams)
 	if err != nil {
 		return createdBet, err
 	}
@@ -47,9 +50,9 @@ func (svc *BetService) Create(ctx context.Context, bet dto.Bet) (createdBet vm.B
 	return returnBet, err
 }
 
-func (svc *BetService) GetAllBets(ctx context.Context) (allBets []vm.Bet, err error) {
+func (svc *BetService) GetAll(ctx context.Context) (allBets []vm.Bet, err error) {
 	betRepo := svc.repoManager.NewBetRepository()
-	items, err := betRepo.GetAllBets(ctx)
+	items, err := betRepo.GetAll(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -91,48 +94,46 @@ func (svc *BetService) GetByID(ctx context.Context, id int32) (bet vm.Bet, err e
 	return bet, nil
 }
 
-// func (svc *BetService) Update(ctx context.Context) (allBets []vm.Bet, err error) {
-// 	betRepo := svc.repoManager.NewBetRepository()
-// 	items, err := betRepo.GetAllBets(ctx)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+func (svc *BetService) Update(ctx context.Context, bet dto.Bet) (updated bool, err error) {
+	betRepo := svc.repoManager.NewBetRepository()
 
-// 	allBets = make([]vm.Bet, 0)
-// 	for _, item := range items {
-// 		allBets = append(allBets, vm.Bet{
-// 			ID:        int(item.Bet.ID),
-// 			BetType:   item.Bet.BetType,
-// 			BetPrice:  item.Bet.BetPrice,
-// 			BetChoice: item.Bet.BetChoice,
-// 			Gambler: vm.Gambler{
-// 				ID:   item.Gambler.ID,
-// 				Name: item.Gambler.GamblerName,
-// 			},
-// 		})
-// 	}
-// 	return allBets, nil
-// }
+	updateParams := db.UpdateBetParams{
+		BetType:   bet.BetType,
+		BetPrice:  bet.BetPrice,
+		BetChoice: bet.BetChoice,
+		ID:        int32(bet.ID),
+	}
 
-// func (svc *BetService) Delete(ctx context.Context) (allBets []vm.Bet, err error) {
-// 	betRepo := svc.repoManager.NewBetRepository()
-// 	items, err := betRepo.GetAllBets(ctx)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	updatedBet, err := betRepo.Update(ctx, updateParams)
+	if err != nil {
+		return false, err
+	}
 
-// 	allBets = make([]vm.Bet, 0)
-// 	for _, item := range items {
-// 		allBets = append(allBets, vm.Bet{
-// 			ID:        int(item.Bet.ID),
-// 			BetType:   item.Bet.BetType,
-// 			BetPrice:  item.Bet.BetPrice,
-// 			BetChoice: item.Bet.BetChoice,
-// 			Gambler: vm.Gambler{
-// 				ID:   item.Gambler.ID,
-// 				Name: item.Gambler.GamblerName,
-// 			},
-// 		})
-// 	}
-// 	return allBets, nil
-// }
+	if updatedBet.ID == 0 {
+		return false, errors.New("internal server error")
+	}
+
+	return true, nil
+}
+
+func (svc *BetService) Delete(ctx context.Context, id int32) (deleted bool, err error) {
+	betRepo := svc.repoManager.NewBetRepository()
+
+	deleteParams := db.DeleteBetParams{
+		ID: id,
+		DeletedAt: pgtype.Timestamp{
+			Time: time.Now(),
+		},
+	}
+
+	deletedBet, err := betRepo.Delete(ctx, deleteParams)
+	if err != nil {
+		return false, err
+	}
+
+	if deletedBet.ID == 0 {
+		return false, errors.New("internal server error")
+	}
+
+	return true, nil
+}
