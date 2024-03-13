@@ -13,25 +13,34 @@ import (
 	svc_contracts "github.com/ESSantana/jogo-do-bicho/internal/services/contracts"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+
+	"github.com/ESSantana/jogo-do-bicho/packages/log"
 )
 
+var logger log.Logger
 var repoManager repo_contracts.RepositoryManager
 var serviceManager svc_contracts.ServiceManager
+var router *chi.Mux
 
 func main() {
-	chi_router := chi.NewRouter()
-	chi_router.Use(middleware.Logger)
-	SingletonRepository(context.Background())
-	SingletonService()
+	logger = log.NewLogger(log.DEBUG)
+	singletonRepository(context.Background())
+	singletonService(logger)
+	setupRouter()
 
-	routers.ConfigBetRouter(chi_router, serviceManager)
+	defer startServer(router)
+	fmt.Println("Server listening on port :3000")
+}
 
-	defer startServer(chi_router)
-	fmt.Println("Server listening on port :8080")
+func setupRouter() {
+	router = chi.NewRouter()
+	router.Use(middleware.Logger)
+
+	routers.ConfigBetRouter(router, logger, serviceManager)
 }
 
 func startServer(router *chi.Mux) {
-	listen, err := net.Listen("tcp", ":8080")
+	listen, err := net.Listen("tcp", ":3000")
 	if err != nil {
 		panic(err)
 	}
@@ -40,16 +49,16 @@ func startServer(router *chi.Mux) {
 	}
 }
 
-func SingletonRepository(ctx context.Context) {
+func singletonRepository(ctx context.Context) {
 	if repoManager != nil {
 		return
 	}
 	repoManager = repositories.NewRepositoryManager(ctx)
 }
 
-func SingletonService() {
+func singletonService(logger log.Logger) {
 	if serviceManager != nil {
 		return
 	}
-	serviceManager = services.NewServiceManager(repoManager)
+	serviceManager = services.NewServiceManager(logger, repoManager)
 }

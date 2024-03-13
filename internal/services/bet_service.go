@@ -10,15 +10,18 @@ import (
 	repo_contracts "github.com/ESSantana/jogo-do-bicho/internal/repositories/contracts"
 	"github.com/ESSantana/jogo-do-bicho/internal/repositories/db"
 	"github.com/ESSantana/jogo-do-bicho/internal/services/contracts"
+	"github.com/ESSantana/jogo-do-bicho/packages/log"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type BetService struct {
+	logger      log.Logger
 	repoManager repo_contracts.RepositoryManager
 }
 
-func newBetService(repoManager repo_contracts.RepositoryManager) contracts.BetService {
+func newBetService(logger log.Logger, repoManager repo_contracts.RepositoryManager) contracts.BetService {
 	return &BetService{
+		logger:      logger,
 		repoManager: repoManager,
 	}
 }
@@ -38,7 +41,7 @@ func (svc *BetService) Create(ctx context.Context, bet dto.Bet) (createdBet vm.B
 	}
 
 	returnBet := vm.Bet{
-		ID: int(createdBet.ID),
+		ID: createdBet.ID,
 		Gambler: vm.Gambler{
 			ID: persistedBet.GamblerID,
 		},
@@ -60,7 +63,7 @@ func (svc *BetService) GetAll(ctx context.Context) (allBets []vm.Bet, err error)
 	allBets = make([]vm.Bet, 0)
 	for _, item := range items {
 		allBets = append(allBets, vm.Bet{
-			ID:        int(item.Bet.ID),
+			ID:        item.Bet.ID,
 			BetType:   item.Bet.BetType,
 			BetPrice:  item.Bet.BetPrice,
 			BetChoice: item.Bet.BetChoice,
@@ -81,7 +84,7 @@ func (svc *BetService) GetByID(ctx context.Context, id int32) (bet vm.Bet, err e
 	}
 
 	bet = vm.Bet{
-		ID:        int(betPersisted.Bet.ID),
+		ID:        betPersisted.Bet.ID,
 		BetType:   betPersisted.Bet.BetType,
 		BetPrice:  betPersisted.Bet.BetPrice,
 		BetChoice: betPersisted.Bet.BetChoice,

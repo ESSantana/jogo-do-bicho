@@ -15,14 +15,13 @@ SELECT
     sqlc.embed(bets)
 FROM
     gamblers
-    JOIN bets ON gamblers.id = bets.gambler_id
+    LEFT JOIN bets ON gamblers.id = bets.gambler_id
 WHERE
     gamblers.id = $1;
 
 -- name: GetGamblers :many
 SELECT
-    sqlc.embed(gamblers),
-    sqlc.embed(bets)
+    sqlc.embed(gamblers)
 FROM
-    gamblers
-    JOIN bets ON gamblers.id = bets.gambler_id;
+    gamblers;
+    

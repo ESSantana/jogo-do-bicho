@@ -3,12 +3,14 @@ version: "3.8"
 services:
   db:
     image: postgres:alpine
-    container_name: postgres
+    container_name: jogo-do-bicho-db
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: pass
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
       POSTGRES_DB: jogo-do-bicho
+    ports:
+      - 5432:5432
     volumes:
       - ./sql/:/var/lib/postgres
     networks:
@@ -21,7 +23,9 @@ services:
     env_file:
       - ./.env
     ports:
-      - 8080:8080
+      - 3000:3000
+    volumes:
+      - .:/app
     depends_on:
       - db
     networks:

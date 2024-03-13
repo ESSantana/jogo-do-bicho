@@ -29,3 +29,7 @@ func NewRepositoryManager(ctx context.Context) *RepositoryManager {
 func (manager *RepositoryManager) NewBetRepository() contracts.BetRepository {
 	return newBetRepository(manager.queries)
 }
+
+func (manager *RepositoryManager) NewGamblerRepository() contracts.GamblerRepository {
+	return newGamblerRepository(manager.queries)
+}

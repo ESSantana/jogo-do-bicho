@@ -17,7 +17,7 @@ WORKDIR /
 
 COPY --from=build-stage /jogo-do-bicho /jogo-do-bicho
 
-EXPOSE 8080
+EXPOSE 3000
 
 USER nonroot:nonroot
 
