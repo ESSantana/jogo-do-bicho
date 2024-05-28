@@ -75,7 +75,7 @@ func (q *Queries) DeleteBet(ctx context.Context, arg DeleteBetParams) (Bet, erro
 const getBet = `-- name: GetBet :one
 SELECT
     bets.id, bets.gambler_id, bets.bet_type, bets.bet_price, bets.bet_choice, bets.deleted_at,
-    gamblers.id, gamblers.gambler_name, gamblers.document, gamblers.document_type, gamblers.birth_date
+    gamblers.id, gamblers.gambler_name, gamblers.document, gamblers.document_type, gamblers.birth_date, gamblers.updated_at, gamblers.deleted_at
 FROM
     bets
     JOIN gamblers ON bets.gambler_id = gamblers.id
@@ -104,6 +104,8 @@ func (q *Queries) GetBet(ctx context.Context, id int32) (GetBetRow, error) {
 		&i.Gambler.Document,
 		&i.Gambler.DocumentType,
 		&i.Gambler.BirthDate,
+		&i.Gambler.UpdatedAt,
+		&i.Gambler.DeletedAt,
 	)
 	return i, err
 }
@@ -111,7 +113,7 @@ func (q *Queries) GetBet(ctx context.Context, id int32) (GetBetRow, error) {
 const getBets = `-- name: GetBets :many
 SELECT
     bets.id, bets.gambler_id, bets.bet_type, bets.bet_price, bets.bet_choice, bets.deleted_at,
-    gamblers.id, gamblers.gambler_name, gamblers.document, gamblers.document_type, gamblers.birth_date
+    gamblers.id, gamblers.gambler_name, gamblers.document, gamblers.document_type, gamblers.birth_date, gamblers.updated_at, gamblers.deleted_at
 FROM
     bets
     JOIN gamblers ON bets.gambler_id = gamblers.id
@@ -145,6 +147,8 @@ func (q *Queries) GetBets(ctx context.Context) ([]GetBetsRow, error) {
 			&i.Gambler.Document,
 			&i.Gambler.DocumentType,
 			&i.Gambler.BirthDate,
+			&i.Gambler.UpdatedAt,
+			&i.Gambler.DeletedAt,
 		); err != nil {
 			return nil, err
 		}

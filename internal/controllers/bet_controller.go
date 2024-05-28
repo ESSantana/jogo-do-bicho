@@ -13,6 +13,7 @@ import (
 	svc_contracts "github.com/ESSantana/jogo-do-bicho/internal/services/contracts"
 	"github.com/ESSantana/jogo-do-bicho/internal/utils"
 	"github.com/ESSantana/jogo-do-bicho/packages/log"
+	"github.com/go-chi/chi/v5"
 )
 
 var betService svc_contracts.BetService
@@ -86,8 +87,7 @@ func (ctlr *BetController) Get(response http.ResponseWriter, request *http.Reque
 	ctx, cancel := context.WithTimeout(request.Context(), 1*time.Second)
 	defer cancel()
 
-	queryValues := request.URL.Query()
-	unparsedID := queryValues["id"][0]
+	unparsedID := chi.URLParam(request, "id")
 	id, err := strconv.Atoi(unparsedID)
 	if err != nil {
 		responseBody := map[string]interface{}{
@@ -99,6 +99,7 @@ func (ctlr *BetController) Get(response http.ResponseWriter, request *http.Reque
 
 	vm, err := betService.GetByID(ctx, int32(id))
 	if err != nil {
+		ctlr.logger.Errorf("error getting bet by ID %s: %s", id, err.Error())
 		responseBody := map[string]interface{}{
 			"message": "error getting bet by id",
 		}

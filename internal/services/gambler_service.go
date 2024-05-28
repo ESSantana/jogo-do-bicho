@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/ESSantana/jogo-do-bicho/internal/entities/dto"
@@ -10,6 +11,7 @@ import (
 	"github.com/ESSantana/jogo-do-bicho/internal/repositories/db"
 	"github.com/ESSantana/jogo-do-bicho/internal/services/contracts"
 	"github.com/ESSantana/jogo-do-bicho/packages/log"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type GamblerService struct {
@@ -86,70 +88,74 @@ func (svc *GamblerService) GetByID(ctx context.Context, id int32) (gambler vm.Ga
 		return gambler, err
 	}
 
-	birthDate, err := time.Parse(time.RFC3339, gamblerPersisted.Gambler.BirthDate)
+	birthDate, err := time.Parse(time.RFC3339, gamblerPersisted[0].Gambler.BirthDate)
 	if err != nil {
 		return gambler, err
 	}
 
 	gambler = vm.Gambler{
-		ID:           gamblerPersisted.Gambler.ID,
-		Name:         gamblerPersisted.Gambler.GamblerName,
-		Document:     gamblerPersisted.Gambler.GamblerName,
-		DocumentType: gamblerPersisted.Gambler.GamblerName,
+		ID:           gamblerPersisted[0].Gambler.ID,
+		Name:         gamblerPersisted[0].Gambler.GamblerName,
+		Document:     gamblerPersisted[0].Gambler.GamblerName,
+		DocumentType: gamblerPersisted[0].Gambler.GamblerName,
 		BirthDate:    birthDate,
-		Bets: []vm.Bet{
-			{
-				ID:        gamblerPersisted.Bet.ID,
-				BetType:   gamblerPersisted.Bet.BetType,
-				BetPrice:  gamblerPersisted.Bet.BetPrice,
-				BetChoice: gamblerPersisted.Bet.BetChoice,
-			},
-		},
+		Bets:         []vm.Bet{},
+	}
+
+	for _, item := range gamblerPersisted {
+
+		gambler.Bets = append(gambler.Bets, vm.Bet{
+			ID:        item.Bet.ID,
+			BetType:   item.Bet.BetType,
+			BetPrice:  item.Bet.BetPrice,
+			BetChoice: item.Bet.BetChoice,
+		})
 	}
 
 	return gambler, nil
 }
 
 func (svc *GamblerService) Update(ctx context.Context, gambler dto.Gambler) (updated bool, err error) {
-	// gamblerRepo := svc.repoManager.NewGamblerRepository()
+	gamblerRepo := svc.repoManager.NewGamblerRepository()
 
-	// updateParams := db.UpdateGamblerParams{
-	// 	GamblerType:   gambler.GamblerType,
-	// 	GamblerPrice:  gambler.GamblerPrice,
-	// 	GamblerChoice: gambler.GamblerChoice,
-	// 	ID:            int32(gambler.ID),
-	// }
+	updateParams := db.UpdateGamblerParams{
+		ID:           gambler.ID,
+		GamblerName:  gambler.Name,
+		Document:     gambler.Document,
+		DocumentType: db.DocType(gambler.DocumentType),
+		BirthDate:    gambler.BirthDate.Format(time.RFC3339),
+	}
 
-	// updatedGambler, err := gamblerRepo.Update(ctx, updateParams)
-	// if err != nil {
-	// 	return false, err
-	// }
+	updatedGambler, err := gamblerRepo.Update(ctx, updateParams)
+	if err != nil {
+		return false, err
+	}
 
-	// if updatedGambler.ID == 0 {
-	// 	return false, errors.New("internal server error")
-	// }
+	if updatedGambler.ID == 0 {
+		return false, errors.New("internal server error")
+	}
 
 	return true, nil
 }
 
 func (svc *GamblerService) Delete(ctx context.Context, id int32) (deleted bool, err error) {
-	// gamblerRepo := svc.repoManager.NewGamblerRepository()
+	gamblerRepo := svc.repoManager.NewGamblerRepository()
 
-	// deleteParams := db.DeleteGamblerParams{
-	// 	ID: id,
-	// 	DeletedAt: pgtype.Timestamp{
-	// 		Time: time.Now(),
-	// 	},
-	// }
+	deleteParams := db.DeleteGamblerParams{
+		ID: id,
+		DeletedAt: pgtype.Timestamp{
+			Time: time.Now(),
+		},
+	}
 
-	// deletedGambler, err := gamblerRepo.Delete(ctx, deleteParams)
-	// if err != nil {
-	// 	return false, err
-	// }
+	deletedGambler, err := gamblerRepo.Delete(ctx, deleteParams)
+	if err != nil {
+		return false, err
+	}
 
-	// if deletedGambler.ID == 0 {
-	// 	return false, errors.New("internal server error")
-	// }
+	if deletedGambler.ID == 0 {
+		return false, errors.New("internal server error")
+	}
 
 	return true, nil
 }

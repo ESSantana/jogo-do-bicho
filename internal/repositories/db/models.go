@@ -63,17 +63,20 @@ type Bet struct {
 }
 
 type Gambler struct {
-	ID           int32   `db:"id" json:"id"`
-	GamblerName  string  `db:"gambler_name" json:"gambler_name"`
-	Document     string  `db:"document" json:"document"`
-	DocumentType DocType `db:"document_type" json:"document_type"`
-	BirthDate    string  `db:"birth_date" json:"birth_date"`
+	ID           int32            `db:"id" json:"id"`
+	GamblerName  string           `db:"gambler_name" json:"gambler_name"`
+	Document     string           `db:"document" json:"document"`
+	DocumentType DocType          `db:"document_type" json:"document_type"`
+	BirthDate    string           `db:"birth_date" json:"birth_date"`
+	UpdatedAt    pgtype.Timestamp `db:"updated_at" json:"updated_at"`
+	DeletedAt    pgtype.Timestamp `db:"deleted_at" json:"deleted_at"`
 }
 
 type Raffle struct {
-	ID            int32  `db:"id" json:"id"`
-	RaffleEdition int32  `db:"raffle_edition" json:"raffle_edition"`
-	Animal        string `db:"animal" json:"animal"`
-	RaffleNumber  string `db:"raffle_number" json:"raffle_number"`
-	RaffleOrder   int32  `db:"raffle_order" json:"raffle_order"`
+	ID            int32            `db:"id" json:"id"`
+	RaffleEdition int32            `db:"raffle_edition" json:"raffle_edition"`
+	Animal        string           `db:"animal" json:"animal"`
+	RaffleNumber  string           `db:"raffle_number" json:"raffle_number"`
+	RaffleOrder   int32            `db:"raffle_order" json:"raffle_order"`
+	DeletedAt     pgtype.Timestamp `db:"deleted_at" json:"deleted_at"`
 }

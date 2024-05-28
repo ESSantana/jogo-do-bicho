@@ -9,7 +9,7 @@ INSERT INTO
 VALUES
     ($1, $2, $3, $4) RETURNING *;
 
--- name: GetGambler :one
+-- name: GetGambler :many
 SELECT
     sqlc.embed(gamblers),
     sqlc.embed(bets)
@@ -25,3 +25,21 @@ SELECT
 FROM
     gamblers;
     
+-- name: UpdateGambler :one
+UPDATE 
+    gamblers
+SET 
+    gambler_name = $1,
+    document = $2,
+    document_type = $3,
+    birth_date = $4
+WHERE 
+    id = $5 AND gamblers.deleted_at IS NOT NULL RETURNING *;
+
+-- name: DeleteGambler :one
+UPDATE 
+    gamblers
+SET 
+    deleted_at = $1
+WHERE 
+    id = $2 RETURNING *;

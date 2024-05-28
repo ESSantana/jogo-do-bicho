@@ -27,17 +27,17 @@ func (r *GamblerRepository) GetAll(ctx context.Context) ([]db.GetGamblersRow, er
 	return createdGambler, err
 }
 
-func (r *GamblerRepository) GetByID(ctx context.Context, id int32) (db.GetGamblerRow, error) {
+func (r *GamblerRepository) GetByID(ctx context.Context, id int32) ([]db.GetGamblerRow, error) {
 	gambler, err := r.sqlcQueries.GetGambler(ctx, id)
 	return gambler, err
 }
 
-// func (r *GamblerRepository) Update(ctx context.Context, gamblerUpdated db.UpdateGamblerParams) (db.Gambler, error) {
-// 	gambler, err := r.sqlcQueries.UpdateGambler(ctx, gamblerUpdated)
-// 	return gambler, err
-// }
+func (r *GamblerRepository) Update(ctx context.Context, gamblerUpdated db.UpdateGamblerParams) (db.Gambler, error) {
+	gambler, err := r.sqlcQueries.UpdateGambler(ctx, gamblerUpdated)
+	return gambler, err
+}
 
-// func (r *GamblerRepository) Delete(ctx context.Context, deleteParams db.DeleteGamblerParams) (db.Gambler, error) {
-// 	gambler, err := r.sqlcQueries.DeleteGambler(ctx, deleteParams)
-// 	return gambler, err
-// }
+func (r *GamblerRepository) Delete(ctx context.Context, deleteParams db.DeleteGamblerParams) (db.Gambler, error) {
+	gambler, err := r.sqlcQueries.DeleteGambler(ctx, deleteParams)
+	return gambler, err
+}

@@ -13,6 +13,7 @@ import (
 	svc_contracts "github.com/ESSantana/jogo-do-bicho/internal/services/contracts"
 	"github.com/ESSantana/jogo-do-bicho/internal/utils"
 	"github.com/ESSantana/jogo-do-bicho/packages/log"
+	"github.com/go-chi/chi/v5"
 )
 
 const DefaultTimeout = 1 * time.Second
@@ -91,8 +92,7 @@ func (ctlr *GamblerController) Get(response http.ResponseWriter, request *http.R
 	ctx, cancel := context.WithTimeout(request.Context(), DefaultTimeout)
 	defer cancel()
 
-	queryValues := request.URL.Query()
-	unparsedID := queryValues["id"][0]
+	unparsedID := chi.URLParam(request, "id")
 	id, err := strconv.Atoi(unparsedID)
 	if err != nil {
 		responseBody := map[string]interface{}{
@@ -104,7 +104,7 @@ func (ctlr *GamblerController) Get(response http.ResponseWriter, request *http.R
 
 	vm, err := gamblerService.GetByID(ctx, int32(id))
 	if vm.ID == 0 {
-		utils.CreateResponse(&response, http.StatusNoContent, nil)
+		utils.CreateResponse(&response, http.StatusNotFound, nil)
 		return
 	}
 

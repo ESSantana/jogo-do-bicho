@@ -16,7 +16,7 @@ func configBet(router *chi.Mux, logger log.Logger, serviceManager svc_contracts.
 	controller := controllers.NewBetController(logger, serviceManager)
 
 	router.Get("/bet", controller.GetAll)
-	router.Get("/bet?id={id}", controller.Get)
+	router.Get("/bet/{id}", controller.Get)
 	router.Post("/bet", controller.Create)
 	router.Put("/bet", controller.Update)
 	router.Delete("/bet", controller.Delete)
@@ -26,7 +26,7 @@ func configGambler(router *chi.Mux, logger log.Logger, serviceManager svc_contra
 	controller := controllers.NewGamblerController(logger, serviceManager)
 
 	router.Get("/gambler", controller.GetAll)
-	router.Get("/gambler?id={id}", controller.Get)
+	router.Get("/gambler/{id}", controller.Get)
 	router.Post("/gambler", controller.Create)
 	router.Put("/gambler", controller.Update)
 	router.Delete("/gambler", controller.Delete)

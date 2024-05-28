@@ -10,10 +10,10 @@ type Logger interface {
 	Warn(message string)
 	Error(message string)
 
-	Debugf(message string, args ...string)
-	Infof(message string, args ...string)
-	Warnf(message string, args ...string)
-	Errorf(message string, args ...string)
+	Debugf(message string, args ...interface{})
+	Infof(message string, args ...interface{})
+	Warnf(message string, args ...interface{})
+	Errorf(message string, args ...interface{})
 }
 
 type LogLevel = int8
@@ -63,22 +63,22 @@ func (l *logger) Error(message string) {
 	}
 }
 
-func (l *logger) Debugf(message string, args ...string) {
+func (l *logger) Debugf(message string, args ...interface{}) {
 	if l.LogLevel <= DEBUG {
 		log.Debug().Msgf(message, args)
 	}
 }
-func (l *logger) Infof(message string, args ...string) {
+func (l *logger) Infof(message string, args ...interface{}) {
 	if l.LogLevel <= INFO {
 		log.Info().Msgf(message, args)
 	}
 }
-func (l *logger) Warnf(message string, args ...string) {
+func (l *logger) Warnf(message string, args ...interface{}) {
 	if l.LogLevel <= WARN {
 		log.Warn().Msgf(message, args)
 	}
 }
-func (l *logger) Errorf(message string, args ...string) {
+func (l *logger) Errorf(message string, args ...interface{}) {
 	if l.LogLevel <= ERROR {
 		log.Error().Msgf(message, args)
 	}

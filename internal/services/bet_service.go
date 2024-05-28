@@ -42,7 +42,7 @@ func (svc *BetService) Create(ctx context.Context, bet dto.Bet) (createdBet vm.B
 
 	returnBet := vm.Bet{
 		ID: createdBet.ID,
-		Gambler: vm.Gambler{
+		Gambler: &vm.Gambler{
 			ID: persistedBet.GamblerID,
 		},
 		BetType:   createdBet.BetType,
@@ -67,7 +67,7 @@ func (svc *BetService) GetAll(ctx context.Context) (allBets []vm.Bet, err error)
 			BetType:   item.Bet.BetType,
 			BetPrice:  item.Bet.BetPrice,
 			BetChoice: item.Bet.BetChoice,
-			Gambler: vm.Gambler{
+			Gambler: &vm.Gambler{
 				ID:   item.Gambler.ID,
 				Name: item.Gambler.GamblerName,
 			},
@@ -88,7 +88,7 @@ func (svc *BetService) GetByID(ctx context.Context, id int32) (bet vm.Bet, err e
 		BetType:   betPersisted.Bet.BetType,
 		BetPrice:  betPersisted.Bet.BetPrice,
 		BetChoice: betPersisted.Bet.BetChoice,
-		Gambler: vm.Gambler{
+		Gambler: &vm.Gambler{
 			ID:   betPersisted.Gambler.ID,
 			Name: betPersisted.Gambler.GamblerName,
 		},
