@@ -16,34 +16,40 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-var betService svc_contracts.BetService
+const DefaultTimeout = 1 * time.Second
 
-type BetController struct {
+var gamblerService svc_contracts.GamblerService
+
+type GamblerController struct {
 	logger         log.Logger
 	serviceManager svc_contracts.ServiceManager
 }
 
-func NewBetController(logger log.Logger, serviceManager svc_contracts.ServiceManager) contracts.BetController {
-	return &BetController{
+func NewGamblerController(logger log.Logger, serviceManager svc_contracts.ServiceManager) contracts.GamblerController {
+	return &GamblerController{
 		logger:         logger,
 		serviceManager: serviceManager,
 	}
 }
 
-func (ctlr *BetController) Create(response http.ResponseWriter, request *http.Request) {
+func (ctlr *GamblerController) Create(response http.ResponseWriter, request *http.Request) {
 	ctlr.getService()
-	ctx, cancel := context.WithTimeout(request.Context(), 1*time.Second)
+	ctx, cancel := context.WithTimeout(request.Context(), DefaultTimeout)
 	defer cancel()
 
-	betDTO := utils.ReadBody[dto.Bet](request, response)
-	if betDTO.BetType == "" {
+	gamblerDTO := utils.ReadBody[dto.Gambler](request, response)
+	if err := gamblerDTO.Validate(); err != nil {
+		responseBody := map[string]interface{}{
+			"message": fmt.Sprintf("validation error: %s", err.Error()),
+		}
+		utils.CreateResponse(&response, http.StatusBadRequest, responseBody)
 		return
 	}
 
-	vm, err := betService.Create(ctx, betDTO)
+	vm, err := gamblerService.Create(ctx, gamblerDTO)
 	if err != nil {
 		responseBody := map[string]interface{}{
-			"message": "error creating new bet",
+			"message": fmt.Sprintf("error at create gambler: %s", err.Error()),
 		}
 		utils.CreateResponse(&response, http.StatusInternalServerError, responseBody)
 		return
@@ -56,16 +62,15 @@ func (ctlr *BetController) Create(response http.ResponseWriter, request *http.Re
 	utils.CreateResponse(&response, http.StatusCreated, responseBody)
 }
 
-func (ctlr *BetController) GetAll(response http.ResponseWriter, request *http.Request) {
-	ctlr.logger.Debug("GetAll")
+func (ctlr *GamblerController) GetAll(response http.ResponseWriter, request *http.Request) {
 	ctlr.getService()
-	ctx, cancel := context.WithTimeout(request.Context(), 1*time.Second)
+	ctx, cancel := context.WithTimeout(request.Context(), DefaultTimeout)
 	defer cancel()
 
-	vm, err := betService.GetAll(ctx)
+	vm, err := gamblerService.GetAll(ctx)
 	if err != nil {
 		responseBody := map[string]interface{}{
-			"message": fmt.Sprintf("error getting all bets: %s", err.Error()),
+			"message": fmt.Sprintf("error getting all gamblers: %s", err.Error()),
 		}
 		utils.CreateResponse(&response, http.StatusInternalServerError, responseBody)
 		return
@@ -82,9 +87,9 @@ func (ctlr *BetController) GetAll(response http.ResponseWriter, request *http.Re
 	utils.CreateResponse(&response, http.StatusOK, responseBody)
 }
 
-func (ctlr *BetController) Get(response http.ResponseWriter, request *http.Request) {
+func (ctlr *GamblerController) Get(response http.ResponseWriter, request *http.Request) {
 	ctlr.getService()
-	ctx, cancel := context.WithTimeout(request.Context(), 1*time.Second)
+	ctx, cancel := context.WithTimeout(request.Context(), DefaultTimeout)
 	defer cancel()
 
 	unparsedID := chi.URLParam(request, "id")
@@ -97,18 +102,17 @@ func (ctlr *BetController) Get(response http.ResponseWriter, request *http.Reque
 		return
 	}
 
-	vm, err := betService.GetByID(ctx, int32(id))
-	if err != nil {
-		ctlr.logger.Errorf("error getting bet by ID %s: %s", id, err.Error())
-		responseBody := map[string]interface{}{
-			"message": "error getting bet by id",
-		}
-		utils.CreateResponse(&response, http.StatusInternalServerError, responseBody)
+	vm, err := gamblerService.GetByID(ctx, int32(id))
+	if vm.ID == 0 {
+		utils.CreateResponse(&response, http.StatusNotFound, nil)
 		return
 	}
 
-	if vm.ID == 0 {
-		utils.CreateResponse(&response, http.StatusNoContent, nil)
+	if err != nil {
+		responseBody := map[string]interface{}{
+			"message": "error getting gambler by id",
+		}
+		utils.CreateResponse(&response, http.StatusInternalServerError, responseBody)
 		return
 	}
 
@@ -118,20 +122,32 @@ func (ctlr *BetController) Get(response http.ResponseWriter, request *http.Reque
 	utils.CreateResponse(&response, http.StatusOK, responseBody)
 }
 
-func (ctlr *BetController) Update(response http.ResponseWriter, request *http.Request) {
+func (ctlr *GamblerController) Update(response http.ResponseWriter, request *http.Request) {
 	ctlr.getService()
-	ctx, cancel := context.WithTimeout(request.Context(), 1*time.Second)
+	ctx, cancel := context.WithTimeout(request.Context(), DefaultTimeout)
 	defer cancel()
 
-	betDTO := utils.ReadBody[dto.Bet](request, response)
-	if betDTO.BetType == "" {
+	gamblerDTO := utils.ReadBody[dto.Gambler](request, response)
+	if err := gamblerDTO.Validate(); err != nil {
+		responseBody := map[string]interface{}{
+			"message": fmt.Sprintf("validation error: %s", err.Error()),
+		}
+		utils.CreateResponse(&response, http.StatusBadRequest, responseBody)
 		return
 	}
 
-	updated, err := betService.Update(ctx, betDTO)
+	if gamblerDTO.ID <= 0 {
+		responseBody := map[string]interface{}{
+			"message": fmt.Sprintf("invalid gambler ID: %d", gamblerDTO.ID),
+		}
+		utils.CreateResponse(&response, http.StatusBadRequest, responseBody)
+		return
+	}
+
+	updated, err := gamblerService.Update(ctx, gamblerDTO)
 	if err != nil {
 		responseBody := map[string]interface{}{
-			"message": "error updating bet",
+			"message": "error updating gambler",
 		}
 		utils.CreateResponse(&response, http.StatusInternalServerError, responseBody)
 		return
@@ -143,9 +159,9 @@ func (ctlr *BetController) Update(response http.ResponseWriter, request *http.Re
 	utils.CreateResponse(&response, http.StatusCreated, responseBody)
 }
 
-func (ctlr *BetController) Delete(response http.ResponseWriter, request *http.Request) {
+func (ctlr *GamblerController) Delete(response http.ResponseWriter, request *http.Request) {
 	ctlr.getService()
-	ctx, cancel := context.WithTimeout(request.Context(), 1*time.Second)
+	ctx, cancel := context.WithTimeout(request.Context(), DefaultTimeout)
 	defer cancel()
 
 	queryValues := request.URL.Query()
@@ -159,10 +175,10 @@ func (ctlr *BetController) Delete(response http.ResponseWriter, request *http.Re
 		return
 	}
 
-	deleted, err := betService.Delete(ctx, int32(id))
+	deleted, err := gamblerService.Delete(ctx, int32(id))
 	if err != nil {
 		responseBody := map[string]interface{}{
-			"message": "error deleting bet",
+			"message": "error deleting gambler",
 		}
 		utils.CreateResponse(&response, http.StatusInternalServerError, responseBody)
 		return
@@ -174,10 +190,10 @@ func (ctlr *BetController) Delete(response http.ResponseWriter, request *http.Re
 	utils.CreateResponse(&response, http.StatusOK, responseBody)
 }
 
-func (ctlr *BetController) getService() {
-	if betService != nil {
+func (ctlr *GamblerController) getService() {
+	if gamblerService != nil {
 		return
 	}
 
-	betService = ctlr.serviceManager.NewBetService()
+	gamblerService = ctlr.serviceManager.NewGamblerService()
 }

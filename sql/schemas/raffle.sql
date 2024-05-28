@@ -3,5 +3,6 @@ CREATE TABLE IF NOT EXISTS raffles (
     raffle_edition INT NOT NULL,
     animal VARCHAR(255) NOT NULL,
     raffle_number VARCHAR(20) NOT NULL,
-    raffle_order INT NOT NULL
+    raffle_order INT NOT NULL,
+    deleted_at TIMESTAMP
 );
