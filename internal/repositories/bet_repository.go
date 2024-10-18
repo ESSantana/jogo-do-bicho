@@ -17,9 +17,9 @@ func newBetRepository(sqlcQueries *db.Queries) contracts.BetRepository {
 	}
 }
 
-func (r *BetRepository) Create(ctx context.Context, bet db.CreateBetParams) (db.Bet, error) {
-	createdBet, err := r.sqlcQueries.CreateBet(ctx, bet)
-	return createdBet, err
+func (r *BetRepository) Create(ctx context.Context, bet db.CreateBetParams) ( error) {
+	 err := r.sqlcQueries.CreateBet(ctx, bet)
+	return err
 }
 
 func (r *BetRepository) GetAll(ctx context.Context) ([]db.GetBetsRow, error) {
@@ -27,17 +27,17 @@ func (r *BetRepository) GetAll(ctx context.Context) ([]db.GetBetsRow, error) {
 	return createdBet, err
 }
 
-func (r *BetRepository) GetByID(ctx context.Context, id int32) (db.GetBetRow, error) {
+func (r *BetRepository) GetByID(ctx context.Context, id int64) (db.GetBetRow, error) {
 	bet, err := r.sqlcQueries.GetBet(ctx, id)
 	return bet, err
 }
 
-func (r *BetRepository) Update(ctx context.Context, betUpdated db.UpdateBetParams) (db.Bet, error) {
-	bet, err := r.sqlcQueries.UpdateBet(ctx, betUpdated)
-	return bet, err
+func (r *BetRepository) Update(ctx context.Context, betUpdated db.UpdateBetParams) (error) {
+	err := r.sqlcQueries.UpdateBet(ctx, betUpdated)
+	return err
 }
 
-func (r *BetRepository) Delete(ctx context.Context, deleteParams db.DeleteBetParams) (db.Bet, error) {
-	bet, err := r.sqlcQueries.DeleteBet(ctx, deleteParams)
-	return bet, err
+func (r *BetRepository) Delete(ctx context.Context, deleteParams db.DeleteBetParams) (error) {
+	err := r.sqlcQueries.DeleteBet(ctx, deleteParams)
+	return err
 }

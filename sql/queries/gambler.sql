@@ -1,4 +1,4 @@
--- name: CreateGambler :one
+-- name: CreateGambler :exec
 INSERT INTO
     gamblers (
         gambler_name,
@@ -24,22 +24,23 @@ SELECT
     sqlc.embed(gamblers)
 FROM
     gamblers;
-     
--- name: UpdateGambler :one
-UPDATE 
+
+-- name: UpdateGambler :exec
+UPDATE
     gamblers
-SET 
+SET
     gambler_name = ?,
     document = ?,
     document_type = ?,
     birth_date = ?
-WHERE 
-    id = ? AND gamblers.deleted_at IS NOT NULL;
+WHERE
+    id = ?
+    AND gamblers.deleted_at IS NOT NULL;
 
--- name: DeleteGambler :one
-UPDATE 
+-- name: DeleteGambler :exec
+UPDATE
     gamblers
-SET 
+SET
     deleted_at = ?
-WHERE 
+WHERE
     id = ?;

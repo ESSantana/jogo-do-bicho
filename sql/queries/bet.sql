@@ -1,4 +1,4 @@
--- name: CreateBet :one
+-- name: CreateBet :exec
 INSERT INTO
     bets (gambler_id, bet_type, bet_price, bet_choice)
 VALUES
@@ -22,23 +22,24 @@ SELECT
 FROM
     bets
     JOIN gamblers ON bets.gambler_id = gamblers.id
-WHERE 
+WHERE
     bets.deleted_at IS NOT NULL;
 
--- name: UpdateBet :one
-UPDATE 
+-- name: UpdateBet :exec
+UPDATE
     bets
-SET 
+SET
     bet_type = ?,
     bet_price = ?,
     bet_choice = ?
-WHERE 
-    id = ? AND bets.deleted_at IS NOT NULL;
+WHERE
+    id = ?
+    AND bets.deleted_at IS NOT NULL;
 
--- name: DeleteBet :one
-UPDATE 
+-- name: DeleteBet :exec
+UPDATE
     bets
-SET 
+SET
     deleted_at = ?
-WHERE 
+WHERE
     id = ?;

@@ -13,7 +13,7 @@ const (
 	DoubleGroup  BetTypeSlug = "double_group"
 )
 
-var betSlugArr = []BetTypeSlug{"thousands", "hundreds", "dozens", "group", "double_dozens", "double_group"}
+var betSlugs = []BetTypeSlug{"thousands", "hundreds", "dozens", "group", "double_dozens", "double_group"}
 
 func (bts BetTypeSlug) GetPrizeMultiplier() float64 {
 	switch bts {
@@ -42,40 +42,28 @@ const (
 )
 
 type BetType struct {
-	ID          int         `json:"id"`
-	Slug        BetTypeSlug `json:"slug"`
-	Name        string      `json:"name"`
-	Description string      `json:"description"`
+	Slug         BetTypeSlug `json:"slug"`
+	FriendlyName string      `json:"name"`
+	Description  string      `json:"description"`
 }
 
 func (bt *BetType) Validate() error {
-	var errorsValidation = []error{}
-
-	if bt.ID <= 0 {
-		errorsValidation = append(errorsValidation, errors.New("tipo de aposta deve ser um valor válido"))
-	}
-
 	validBetType := false
-	for _, val := range betSlugArr {
-
+	for _, val := range betSlugs {
 		if bt.Slug == val {
 			validBetType = true
 		}
 	}
 
 	if !validBetType {
-		errorsValidation = append(errorsValidation, errors.New("tipo de aposta deve ter identificador válido"))
-	}
-
-	if len(errorsValidation) > 0 {
-		return errors.Join(errorsValidation...)
+		return errors.New("tipo de aposta deve ter identificador válido")
 	}
 
 	return nil
 }
 
 type BetGroup struct {
-	ID           int    `json:"id"`
+	ID           int64  `json:"id"`
 	Name         string `json:"name"`
 	GroupNumbers []int  `json:"group_numbers"`
 }
@@ -90,11 +78,11 @@ func (bg *BetGroup) IsNumberPartOfGroup(input int) bool {
 }
 
 type Bet struct {
-	ID             int         `json:"id,omitempty"`
-	GamblerID      int         `json:"gambler_id"`
+	ID             int64       `json:"id,omitempty"`
+	GamblerID      int64       `json:"gambler_id"`
+	BetPrice       float64     `json:"bet_price"`
 	BetType        BetType     `json:"bet_type"`
 	BetModifier    BetModifier `json:"bet_modifier"`
-	BetPrice       float64     `json:"bet_price"`
 	BetCombination []int       `json:"bet_combination"`
 }
 
@@ -113,29 +101,27 @@ func (b *Bet) Validate() error {
 		errorsValidation = append(errorsValidation, btError)
 	}
 
-	if b.BetModifier != OnTop || b.BetModifier != Surrounded {
+	if (b.BetModifier != OnTop && b.BetModifier != Surrounded) && (b.BetType.Slug != DoubleDozens && b.BetType.Slug != DoubleGroup) {
 		errorsValidation = append(errorsValidation, errors.New("modificador de aposta inválido"))
 	}
 
+	if len(b.BetCombination) > 1 && b.BetType.Slug != DoubleDozens && b.BetType.Slug != DoubleGroup {
+		errorsValidation = append(errorsValidation, errors.New("aposta com mais de um número não é válida"))
+	}
+
+	if len(errorsValidation) > 0 {
+		return errors.Join(errorsValidation...)
+	}
+
 	for _, combination := range b.BetCombination {
-		if b.BetType.Slug == Group && (combination < 1 || combination > 25) {
+		if b.BetType.Slug == DoubleGroup && (combination < 1 || combination > 25) {
 			errorsValidation = append(errorsValidation, errors.New("grupo selecionado na aposta inválido"))
-			break
-		}
-		
-		if b.BetType.Slug == Group && (combination < 1 || combination > 25) {
-			errorsValidation = append(errorsValidation, errors.New("grupo selecionado na aposta inválido"))
-			break
+			continue
 		}
 
-		if b.BetType.Slug == Group && (combination < 1 || combination > 25) {
-			errorsValidation = append(errorsValidation, errors.New("grupo selecionado na aposta inválido"))
-			break
-		}
-
-		if b.BetType.Slug == Group && (combination < 1 || combination > 25) {
-			errorsValidation = append(errorsValidation, errors.New("grupo selecionado na aposta inválido"))
-			break
+		if b.BetType.Slug == DoubleDozens && (combination < 0 || combination > 99) {
+			errorsValidation = append(errorsValidation, errors.New("dezena selecionado na aposta inválido"))
+			continue
 		}
 	}
 

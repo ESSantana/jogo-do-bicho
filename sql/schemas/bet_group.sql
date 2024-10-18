@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS bet_groups (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    group_name VARCHAR(30) NOT NULL,
+    group_number VARCHAR(2) NOT NULL
+);

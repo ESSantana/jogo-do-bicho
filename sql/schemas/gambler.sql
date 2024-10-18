@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS gamblers (
   gambler_name VARCHAR(50) NOT NULL,
   document VARCHAR(20) NOT NULL,
   document_type ENUM('CPF', 'RG') NOT NULL,
-  birth_date VARCHAR(20) NOT NULL,
+  birth_date DATETIME NOT NULL,
   updated_at TIMESTAMP,
   deleted_at TIMESTAMP
 );

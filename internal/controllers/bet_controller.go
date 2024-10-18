@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/ESSantana/jogo-do-bicho/internal/controllers/contracts"
-	"github.com/ESSantana/jogo-do-bicho/internal/entities/dto"
+	"github.com/ESSantana/jogo-do-bicho/internal/domain/dto"
 	svc_contracts "github.com/ESSantana/jogo-do-bicho/internal/services/contracts"
 	"github.com/ESSantana/jogo-do-bicho/internal/utils"
 	"github.com/ESSantana/jogo-do-bicho/packages/log"
@@ -36,7 +36,7 @@ func (ctlr *BetController) Create(response http.ResponseWriter, request *http.Re
 	defer cancel()
 
 	betDTO := utils.ReadBody[dto.Bet](request, response)
-	if betDTO.BetType == "" {
+	if betDTO.BetType.FriendlyName == "" {
 		return
 	}
 
@@ -97,7 +97,7 @@ func (ctlr *BetController) Get(response http.ResponseWriter, request *http.Reque
 		return
 	}
 
-	vm, err := betService.GetByID(ctx, int32(id))
+	vm, err := betService.GetByID(ctx, int64(id))
 	if err != nil {
 		ctlr.logger.Errorf("error getting bet by ID %s: %s", id, err.Error())
 		responseBody := map[string]interface{}{
@@ -124,7 +124,7 @@ func (ctlr *BetController) Update(response http.ResponseWriter, request *http.Re
 	defer cancel()
 
 	betDTO := utils.ReadBody[dto.Bet](request, response)
-	if betDTO.BetType == "" {
+	if betDTO.BetType.FriendlyName == "" {
 		return
 	}
 
@@ -159,7 +159,7 @@ func (ctlr *BetController) Delete(response http.ResponseWriter, request *http.Re
 		return
 	}
 
-	deleted, err := betService.Delete(ctx, int32(id))
+	deleted, err := betService.Delete(ctx, int64(id))
 	if err != nil {
 		responseBody := map[string]interface{}{
 			"message": "error deleting bet",

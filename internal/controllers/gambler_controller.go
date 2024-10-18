@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/ESSantana/jogo-do-bicho/internal/controllers/contracts"
-	"github.com/ESSantana/jogo-do-bicho/internal/entities/dto"
+	"github.com/ESSantana/jogo-do-bicho/internal/domain/dto"
 	svc_contracts "github.com/ESSantana/jogo-do-bicho/internal/services/contracts"
 	"github.com/ESSantana/jogo-do-bicho/internal/utils"
 	"github.com/ESSantana/jogo-do-bicho/packages/log"
@@ -102,7 +102,7 @@ func (ctlr *GamblerController) Get(response http.ResponseWriter, request *http.R
 		return
 	}
 
-	vm, err := gamblerService.GetByID(ctx, int32(id))
+	vm, err := gamblerService.GetByID(ctx, int64(id))
 	if vm.ID == 0 {
 		utils.CreateResponse(&response, http.StatusNotFound, nil)
 		return
@@ -175,7 +175,7 @@ func (ctlr *GamblerController) Delete(response http.ResponseWriter, request *htt
 		return
 	}
 
-	deleted, err := gamblerService.Delete(ctx, int32(id))
+	deleted, err := gamblerService.Delete(ctx, int64(id))
 	if err != nil {
 		responseBody := map[string]interface{}{
 			"message": "error deleting gambler",

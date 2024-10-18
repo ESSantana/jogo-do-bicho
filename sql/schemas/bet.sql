@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS bets (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    gambler_id INT NOT NULL,
+    gambler_id BIGINT NOT NULL,
     bet_type VARCHAR(30) NOT NULL,
     bet_price FLOAT NOT NULL,
     bet_choice VARCHAR(50) NOT NULL,
