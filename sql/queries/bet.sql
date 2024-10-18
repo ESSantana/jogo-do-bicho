@@ -2,7 +2,7 @@
 INSERT INTO
     bets (gambler_id, bet_type, bet_price, bet_choice)
 VALUES
-    ($1, $2, $3, $4) RETURNING *;
+    (?, ?, ?, ?);
 
 -- name: GetBet :one
 SELECT
@@ -12,7 +12,7 @@ FROM
     bets
     JOIN gamblers ON bets.gambler_id = gamblers.id
 WHERE
-    bets.id = $1
+    bets.id = ?
     AND bets.deleted_at IS NOT NULL;
 
 -- name: GetBets :many
@@ -29,16 +29,16 @@ WHERE
 UPDATE 
     bets
 SET 
-    bet_type = $1,
-    bet_price = $2,
-    bet_choice = $3
+    bet_type = ?,
+    bet_price = ?,
+    bet_choice = ?
 WHERE 
-    id = $4 AND bets.deleted_at IS NOT NULL RETURNING *;
+    id = ? AND bets.deleted_at IS NOT NULL;
 
 -- name: DeleteBet :one
 UPDATE 
     bets
 SET 
-    deleted_at = $1
+    deleted_at = ?
 WHERE 
-    id = $2 RETURNING *;
+    id = ?;

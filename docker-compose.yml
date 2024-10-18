@@ -2,17 +2,17 @@ version: "3.8"
 
 services:
   db:
-    image: postgres:alpine
+    image: mysql
     container_name: jogo-do-bicho-db
     restart: always
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: jogo-do-bicho
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: password
+      MYSQL_DATABASE: jogo-do-bicho
     ports:
       - 5432:5432
     volumes:
-      - ./sql/:/var/lib/postgres
+      - ./sql/:/var/lib/mysql
     networks:
       - main
 
