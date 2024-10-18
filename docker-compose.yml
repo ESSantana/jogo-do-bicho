@@ -11,7 +11,11 @@ services:
     ports:
       - 3306:3306
     volumes:
-      - ./sql/init/:/docker-entrypoint-initdb.d
+      - ./sql/init/init.sql:/docker-entrypoint-initdb.d/1.sql
+      - ./sql/schemas/gambler.sql:/docker-entrypoint-initdb.d/2.sql
+      - ./sql/schemas/bet_group.sql:/docker-entrypoint-initdb.d/3.sql
+      - ./sql/schemas/raffle.sql:/docker-entrypoint-initdb.d/4.sql
+      - ./sql/schemas/bet.sql:/docker-entrypoint-initdb.d/5.sql
       - ./sql/tmp/mysql:/var/lib/mysql
     networks:
       - main

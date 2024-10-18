@@ -7,13 +7,11 @@ import (
 	"time"
 
 	"github.com/ESSantana/jogo-do-bicho/internal/repositories/contracts"
-	"github.com/ESSantana/jogo-do-bicho/internal/repositories/db"
 	"github.com/go-sql-driver/mysql"
-	_ "github.com/go-sql-driver/mysql"
 )
 
 type RepositoryManager struct {
-	queries *db.Queries
+	conn *sql.DB
 }
 
 func NewRepositoryManager(ctx context.Context) *RepositoryManager {
@@ -37,17 +35,15 @@ func NewRepositoryManager(ctx context.Context) *RepositoryManager {
 	mysqlConn.SetMaxOpenConns(10)
 	mysqlConn.SetMaxIdleConns(10)
 
-	queries := db.New(mysqlConn)
-
 	return &RepositoryManager{
-		queries: queries,
+		conn: mysqlConn,
 	}
 }
 
 func (manager *RepositoryManager) NewBetRepository() contracts.BetRepository {
-	return newBetRepository(manager.queries)
+	return newBetRepository(manager.conn)
 }
 
 func (manager *RepositoryManager) NewGamblerRepository() contracts.GamblerRepository {
-	return newGamblerRepository(manager.queries)
+	return newGamblerRepository(manager.conn)
 }

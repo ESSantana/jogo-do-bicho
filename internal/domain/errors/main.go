@@ -27,3 +27,15 @@ func NewNotFoundError(message string) error {
 func (e *NotFoundError) Error() string {
 	return fmt.Sprintf("not found error: %s", e.message)
 }
+
+type SQLError struct {
+	message string
+}
+
+func NewSQLError(message string) error {
+	return &SQLError{message: message}
+}
+
+func (e *SQLError) Error() string {
+	return fmt.Sprintf("not found error: %s", e.message)
+}

@@ -3,13 +3,13 @@ package contracts
 import (
 	"context"
 
-	"github.com/ESSantana/jogo-do-bicho/internal/repositories/db"
+	"github.com/ESSantana/jogo-do-bicho/internal/repositories/entities"
 )
 
 type BetRepository interface {
-	Create(ctx context.Context, bet db.CreateBetParams) (error)
-	GetAll(ctx context.Context) ([]db.GetBetsRow, error)
-	GetByID(ctx context.Context, id int64) (db.GetBetRow, error)
-	Update(ctx context.Context, betUpdated db.UpdateBetParams) (error)
-	Delete(ctx context.Context, deleteParams db.DeleteBetParams) (error)
+	Create(ctx context.Context, bet entities.Bet) (persistedID int64, err error)
+	GetAll(ctx context.Context) (bets []entities.Bet, err error)
+	GetByID(ctx context.Context, id int64) (bet entities.Bet, err error)
+	Update(ctx context.Context, bet entities.Bet) (rowsAffected int64, err error)
+	Delete(ctx context.Context, bet entities.Bet) (rowsAffected int64, err error)
 }

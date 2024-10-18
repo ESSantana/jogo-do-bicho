@@ -2,15 +2,15 @@ package services
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/ESSantana/jogo-do-bicho/internal/domain/dto"
 	"github.com/ESSantana/jogo-do-bicho/internal/domain/errors"
 	vm "github.com/ESSantana/jogo-do-bicho/internal/domain/viewmodel"
 	repo_contracts "github.com/ESSantana/jogo-do-bicho/internal/repositories/contracts"
-	"github.com/ESSantana/jogo-do-bicho/internal/repositories/db"
+	"github.com/ESSantana/jogo-do-bicho/internal/repositories/entities"
 	"github.com/ESSantana/jogo-do-bicho/internal/services/contracts"
 	"github.com/ESSantana/jogo-do-bicho/packages/log"
 )
@@ -33,21 +33,26 @@ func (svc *BetService) Create(ctx context.Context, bet dto.Bet) (createdBet vm.B
 		return createdBet, errors.NewValidationError(err.Error())
 	}
 
-	betParams := db.CreateBetParams{
-		GamblerID: bet.GamblerID,
-		BetType:   bet.BetType.FriendlyName,
-		BetPrice:  bet.BetPrice,
-		BetChoice: fmt.Sprint(bet.BetCombination[0]),
+	betRepo := svc.repoManager.NewBetRepository()
+
+	var comb []string
+	for _, n := range bet.BetCombination {
+		comb = append(comb, fmt.Sprint(n))
 	}
 
-	betRepo := svc.repoManager.NewBetRepository()
-	err = betRepo.Create(ctx, betParams)
+	persistedID, err := betRepo.Create(ctx, entities.Bet{
+		GamblerID: bet.GamblerID,
+		BetType:   string(bet.BetType.Slug),
+		BetPrice:  bet.BetPrice,
+		BetChoice: strings.Join(comb, ","),
+	})
+
 	if err != nil {
 		return createdBet, err
 	}
 
 	returnBet := vm.Bet{
-		ID:        createdBet.ID,
+		ID:        persistedID,
 		BetType:   createdBet.BetType,
 		BetPrice:  createdBet.BetPrice,
 		BetChoice: createdBet.BetChoice,
@@ -66,13 +71,12 @@ func (svc *BetService) GetAll(ctx context.Context) (allBets []vm.Bet, err error)
 	allBets = make([]vm.Bet, 0)
 	for _, item := range items {
 		allBets = append(allBets, vm.Bet{
-			ID:        item.Bet.ID,
-			BetType:   item.Bet.BetType,
-			BetPrice:  item.Bet.BetPrice,
-			BetChoice: item.Bet.BetChoice,
+			ID:        item.ID,
+			BetType:   item.BetType,
+			BetPrice:  item.BetPrice,
+			BetChoice: item.BetChoice,
 			Gambler: &vm.Gambler{
-				ID:   item.Gambler.ID,
-				Name: item.Gambler.GamblerName,
+				ID: item.GamblerID,
 			},
 		})
 	}
@@ -81,57 +85,79 @@ func (svc *BetService) GetAll(ctx context.Context) (allBets []vm.Bet, err error)
 
 func (svc *BetService) GetByID(ctx context.Context, id int64) (bet vm.Bet, err error) {
 	betRepo := svc.repoManager.NewBetRepository()
-	betPersisted, err := betRepo.GetByID(ctx, id)
+
+	persisted, err := betRepo.GetByID(ctx, bet.ID)
 	if err != nil {
 		return bet, err
 	}
 
-	bet = vm.Bet{
-		ID:        betPersisted.Bet.ID,
-		BetType:   betPersisted.Bet.BetType,
-		BetPrice:  betPersisted.Bet.BetPrice,
-		BetChoice: betPersisted.Bet.BetChoice,
-		Gambler: &vm.Gambler{
-			ID:   betPersisted.Gambler.ID,
-			Name: betPersisted.Gambler.GamblerName,
-		},
+	if !persisted.IsValid() {
+		return bet, errors.NewNotFoundError("registro não encontrado")
 	}
 
-	return bet, nil
+	return vm.Bet{
+		ID: persisted.ID,
+		Gambler: &vm.Gambler{
+			ID: persisted.GamblerID,
+		},
+		BetType:   persisted.BetType,
+		BetPrice:  persisted.BetPrice,
+		BetChoice: persisted.BetChoice,
+	}, nil
 }
 
 func (svc *BetService) Update(ctx context.Context, bet dto.Bet) (updated bool, err error) {
 	betRepo := svc.repoManager.NewBetRepository()
 
-	updateParams := db.UpdateBetParams{
-		BetType:   bet.BetType.FriendlyName,
-		BetPrice:  bet.BetPrice,
-		BetChoice: fmt.Sprint(bet.BetCombination[0]),
-		ID:        bet.ID,
-	}
-
-	err = betRepo.Update(ctx, updateParams)
+	persisted, err := betRepo.GetByID(ctx, bet.ID)
 	if err != nil {
 		return false, err
 	}
 
-	return true, nil
+	if !persisted.IsValid() {
+		return false, errors.NewNotFoundError("registro não encontrado")
+	}
+
+	var comb []string
+	for _, n := range bet.BetCombination {
+		comb = append(comb, fmt.Sprint(n))
+	}
+
+	rowsAffected, err := betRepo.Update(ctx, entities.Bet{
+		ID:        bet.ID,
+		BetPrice:  bet.BetPrice,
+		BetChoice: strings.Join(comb, ","),
+		BetType:   string(bet.BetType.Slug),
+	})
+
+	if err != nil {
+		return false, err
+	}
+
+	if rowsAffected == 1 {
+		return true, nil
+	}
+
+	return false, errors.NewSQLError("não foi possivel atualizar o registro")
 }
 
 func (svc *BetService) Delete(ctx context.Context, id int64) (deleted bool, err error) {
 	betRepo := svc.repoManager.NewBetRepository()
 
-	deleteParams := db.DeleteBetParams{
-		ID: id,
-		DeletedAt: sql.NullTime{
-			Time: time.Now(),
-		},
-	}
+	now := time.Now()
 
-	err = betRepo.Delete(ctx, deleteParams)
+	rowsAffected, err := betRepo.Delete(ctx, entities.Bet{
+		ID:        id,
+		DeletedAt: &now,
+	})
+
 	if err != nil {
 		return false, err
 	}
 
-	return true, nil
+	if rowsAffected == 1 {
+		return true, nil
+	}
+
+	return false, errors.NewSQLError("não foi possivel deletar o registro")
 }

@@ -2,14 +2,13 @@ package services
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/ESSantana/jogo-do-bicho/internal/domain/dto"
 	"github.com/ESSantana/jogo-do-bicho/internal/domain/errors"
 	vm "github.com/ESSantana/jogo-do-bicho/internal/domain/viewmodel"
 	repo_contracts "github.com/ESSantana/jogo-do-bicho/internal/repositories/contracts"
-	"github.com/ESSantana/jogo-do-bicho/internal/repositories/db"
+	"github.com/ESSantana/jogo-do-bicho/internal/repositories/entities"
 	"github.com/ESSantana/jogo-do-bicho/internal/services/contracts"
 	"github.com/ESSantana/jogo-do-bicho/packages/log"
 )
@@ -27,22 +26,23 @@ func newGamblerService(logger log.Logger, repoManager repo_contracts.RepositoryM
 }
 
 func (svc *GamblerService) Create(ctx context.Context, gambler dto.Gambler) (createdGambler vm.Gambler, err error) {
-	gamblerParams := db.CreateGamblerParams{
+	gamblerRepo := svc.repoManager.NewGamblerRepository()
+
+	now := time.Now()
+	persistedID, err := gamblerRepo.Create(ctx, entities.Gambler{
 		GamblerName:  gambler.Name,
 		Document:     gambler.Document,
-		DocumentType: db.GamblersDocumentType(gambler.DocumentType),
-		BirthDate:    gambler.BirthDate,
-	}
+		DocumentType: entities.GamblersDocumentType(gambler.DocumentType),
+		BirthDate:    &gambler.BirthDate,
+		UpdatedAt:    &now,
+	})
 
-	gamblerRepo := svc.repoManager.NewGamblerRepository()
-	err = gamblerRepo.Create(ctx, gamblerParams)
 	if err != nil {
 		return createdGambler, err
 	}
 
-	//TODO: Retrieve ID
 	returnGambler := vm.Gambler{
-		ID:           19999999,
+		ID:           persistedID,
 		Name:         gambler.Name,
 		Document:     gambler.Document,
 		DocumentType: gambler.DocumentType,
@@ -54,20 +54,20 @@ func (svc *GamblerService) Create(ctx context.Context, gambler dto.Gambler) (cre
 
 func (svc *GamblerService) GetAll(ctx context.Context) (allGamblers []vm.Gambler, err error) {
 	gamblerRepo := svc.repoManager.NewGamblerRepository()
-	items, err := gamblerRepo.GetAll(ctx)
+	gamblers, err := gamblerRepo.GetAll(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	allGamblers = make([]vm.Gambler, 0)
-	for _, item := range items {
+	for _, item := range gamblers {
 
 		allGamblers = append(allGamblers, vm.Gambler{
-			ID:           item.Gambler.ID,
-			Name:         item.Gambler.GamblerName,
-			Document:     item.Gambler.Document,
-			DocumentType: string(item.Gambler.DocumentType),
-			BirthDate:    item.Gambler.BirthDate,
+			ID:           item.ID,
+			Name:         item.GamblerName,
+			Document:     item.Document,
+			DocumentType: string(item.DocumentType),
+			BirthDate:    *item.BirthDate,
 		})
 	}
 	return allGamblers, nil
@@ -75,30 +75,23 @@ func (svc *GamblerService) GetAll(ctx context.Context) (allGamblers []vm.Gambler
 
 func (svc *GamblerService) GetByID(ctx context.Context, id int64) (gambler vm.Gambler, err error) {
 	gamblerRepo := svc.repoManager.NewGamblerRepository()
-	gamblerPersisted, err := gamblerRepo.GetByID(ctx, id)
+
+	persisted, err := gamblerRepo.GetByID(ctx, id)
 	if err != nil {
 		return gambler, err
 	}
 
-	gambler = vm.Gambler{
-		ID:           gamblerPersisted[0].Gambler.ID,
-		Name:         gamblerPersisted[0].Gambler.GamblerName,
-		Document:     gamblerPersisted[0].Gambler.Document,
-		DocumentType: string(gamblerPersisted[0].Gambler.DocumentType),
-		BirthDate:    gamblerPersisted[0].Gambler.BirthDate,
-		Bets:         []vm.Bet{},
+	if !persisted.IsValid() {
+		return gambler, errors.NewNotFoundError("registro não encontrado")
 	}
 
-	for _, item := range gamblerPersisted {
-		gambler.Bets = append(gambler.Bets, vm.Bet{
-			ID:        item.Bet.ID,
-			BetType:   item.Bet.BetType,
-			BetPrice:  item.Bet.BetPrice,
-			BetChoice: item.Bet.BetChoice,
-		})
-	}
-
-	return gambler, nil
+	return vm.Gambler{
+		ID:           persisted.ID,
+		Name:         persisted.GamblerName,
+		Document:     persisted.Document,
+		DocumentType: string(persisted.DocumentType),
+		BirthDate:    *persisted.BirthDate,
+	}, nil
 }
 
 func (svc *GamblerService) Update(ctx context.Context, gambler dto.Gambler) (updated bool, err error) {
@@ -109,49 +102,48 @@ func (svc *GamblerService) Update(ctx context.Context, gambler dto.Gambler) (upd
 		return false, err
 	}
 
-	if len(persisted) == 0 {
-		return false, errors.NewNotFoundError("apostador não encontrado")
+	if !persisted.IsValid() {
+		return false, errors.NewNotFoundError("registro não encontrado")
 	}
 
-	updateParams := db.UpdateGamblerParams{
+	now := time.Now()
+
+	rowsAffected, err := gamblerRepo.Update(ctx, entities.Gambler{
 		ID:           gambler.ID,
 		GamblerName:  gambler.Name,
 		Document:     gambler.Document,
-		DocumentType: db.GamblersDocumentType(gambler.DocumentType),
+		DocumentType: entities.GamblersDocumentType(gambler.DocumentType),
 		BirthDate:    &gambler.BirthDate,
-	}
-
-	err = gamblerRepo.Update(ctx, updateParams)
+		UpdatedAt:    &now,
+	})
 	if err != nil {
 		return false, err
 	}
 
-	return true, nil
+	if rowsAffected == 1 {
+		return true, nil
+	}
+
+	return false, errors.NewSQLError("não foi possivel atualizar o registro")
 }
 
 func (svc *GamblerService) Delete(ctx context.Context, id int64) (deleted bool, err error) {
 	gamblerRepo := svc.repoManager.NewGamblerRepository()
 
-	persisted, err := gamblerRepo.GetByID(ctx, id)
+	now := time.Now()
+
+	rowsAffected, err := gamblerRepo.Delete(ctx, entities.Gambler{
+		ID:        id,
+		DeletedAt: &now,
+	})
+
 	if err != nil {
 		return false, err
 	}
 
-	if len(persisted) == 0 {
-		return false, errors.NewNotFoundError("apostador não encontrado")
+	if rowsAffected == 1 {
+		return true, nil
 	}
 
-	deleteParams := db.DeleteGamblerParams{
-		ID: id,
-		DeletedAt: sql.NullTime{
-			Time: time.Now(),
-		},
-	}
-
-	err = gamblerRepo.Delete(ctx, deleteParams)
-	if err != nil {
-		return false, err
-	}
-
-	return true, nil
+	return false, errors.NewSQLError("não foi possivel deletar o registro")
 }

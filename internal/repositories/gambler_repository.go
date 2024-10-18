@@ -2,42 +2,150 @@ package repositories
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 
 	"github.com/ESSantana/jogo-do-bicho/internal/repositories/contracts"
-	"github.com/ESSantana/jogo-do-bicho/internal/repositories/db"
+	"github.com/ESSantana/jogo-do-bicho/internal/repositories/entities"
 )
 
 type GamblerRepository struct {
-	sqlcQueries *db.Queries
+	conn *sql.DB
 }
 
-func newGamblerRepository(sqlcQueries *db.Queries) contracts.GamblerRepository {
+func newGamblerRepository(conn *sql.DB) contracts.GamblerRepository {
 	return &GamblerRepository{
-		sqlcQueries: sqlcQueries,
+		conn: conn,
 	}
 }
 
-func (r *GamblerRepository) Create(ctx context.Context, gambler db.CreateGamblerParams) (error) {
-	err := r.sqlcQueries.CreateGambler(ctx, gambler)
-	return err
+func (repo *GamblerRepository) Create(ctx context.Context, gambler entities.Gambler) (persistedID int64, err error) {
+	result, err := repo.conn.ExecContext(ctx, `
+		INSERT INTO
+			gamblers (gambler_name, document, document_type, birth_date)
+		VALUES
+			(?, ?, ?, ?)
+	`,
+		gambler.GamblerName, gambler.Document, gambler.DocumentType, gambler.BirthDate,
+	)
+
+	if err != nil {
+		return persistedID, err
+	}
+
+	if affected, err := result.RowsAffected(); affected == 1 && err == nil {
+		return result.LastInsertId()
+	}
+
+	return persistedID, errors.New("nenhuma linha foi afetada")
 }
 
-func (r *GamblerRepository) GetAll(ctx context.Context) ([]db.GetGamblersRow, error) {
-	createdGambler, err := r.sqlcQueries.GetGamblers(ctx)
-	return createdGambler, err
+func (repo *GamblerRepository) GetAll(ctx context.Context) (gamblers []entities.Gambler, err error) {
+	rows, err := repo.conn.QueryContext(ctx, `
+		SELECT
+			*
+		FROM
+			gamblers
+		WHERE
+			deleted_at IS NULL
+		`)
+
+	if err != nil {
+		return gamblers, err
+	}
+
+	defer rows.Close()
+	gamblers = []entities.Gambler{}
+
+	for rows.Next() {
+		var gambler entities.Gambler
+		err := rows.Scan(
+			&gambler.ID,
+			&gambler.GamblerName,
+			&gambler.Document,
+			&gambler.DocumentType,
+			&gambler.BirthDate,
+			&gambler.UpdatedAt,
+			&gambler.DeletedAt,
+		)
+		if err != nil {
+			return gamblers, err
+		}
+
+		gamblers = append(gamblers, gambler)
+	}
+
+	if err = rows.Err(); err != nil {
+		return gamblers, err
+	}
+
+	return gamblers, nil
 }
 
-func (r *GamblerRepository) GetByID(ctx context.Context, id int64) ([]db.GetGamblerRow, error) {
-	gambler, err := r.sqlcQueries.GetGambler(ctx, id)
+func (repo *GamblerRepository) GetByID(ctx context.Context, id int64) (gambler entities.Gambler, err error) {
+	row := repo.conn.QueryRowContext(ctx, `
+		SELECT
+			*
+		FROM
+			gamblers
+		WHERE
+			gamblers.id = ?
+			AND gamblers.deleted_at IS NULL
+		`,
+		id,
+	)
+
+	err = row.Scan(
+		&gambler.ID,
+		&gambler.GamblerName,
+		&gambler.Document,
+		&gambler.DocumentType,
+		&gambler.BirthDate,
+		&gambler.UpdatedAt,
+		&gambler.DeletedAt,
+	)
+
 	return gambler, err
 }
 
-func (r *GamblerRepository) Update(ctx context.Context, gamblerUpdated db.UpdateGamblerParams) (error) {
-	 err := r.sqlcQueries.UpdateGambler(ctx, gamblerUpdated)
-	return  err
+func (repo *GamblerRepository) Update(ctx context.Context, gambler entities.Gambler) (rowsAffected int64, err error) {
+	result, err := repo.conn.ExecContext(ctx, `
+		UPDATE
+			gamblers
+		SET
+			gambler_name = ?,
+			document = ?,
+			document_type = ?,
+			birth_date = ?
+		WHERE
+			id = ?
+			AND gamblers.deleted_at IS NULL
+		`,
+		gambler.GamblerName, gambler.Document, gambler.DocumentType, gambler.BirthDate, gambler.ID,
+	)
+
+	if err != nil {
+		return rowsAffected, err
+	}
+
+	return result.RowsAffected()
 }
 
-func (r *GamblerRepository) Delete(ctx context.Context, deleteParams db.DeleteGamblerParams) (error) {
-	 err := r.sqlcQueries.DeleteGambler(ctx, deleteParams)
-	return  err
+func (repo *GamblerRepository) Delete(ctx context.Context, gambler entities.Gambler) (rowsAffected int64, err error) {
+	result, err := repo.conn.ExecContext(ctx, `
+		UPDATE
+			gamblers
+		SET
+			deleted_at = ?
+		WHERE
+			id = ?
+		`,
+		gambler.DeletedAt, gambler.ID,
+	)
+
+	if err != nil {
+		return rowsAffected, err
+	}
+
+	return result.RowsAffected()
 }
