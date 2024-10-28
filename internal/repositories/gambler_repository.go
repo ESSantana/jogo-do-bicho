@@ -22,11 +22,11 @@ func newGamblerRepository(conn *sql.DB) contracts.GamblerRepository {
 func (repo *GamblerRepository) Create(ctx context.Context, gambler entities.Gambler) (persistedID int64, err error) {
 	result, err := repo.conn.ExecContext(ctx, `
 		INSERT INTO
-			gamblers (gambler_name, document, document_type, birth_date)
+			gambler (name, document, document_type, birth_date)
 		VALUES
 			(?, ?, ?, ?)
 	`,
-		gambler.GamblerName, gambler.Document, gambler.DocumentType, gambler.BirthDate,
+		gambler.Name, gambler.Document, gambler.DocumentType, gambler.BirthDate,
 	)
 
 	if err != nil {
@@ -45,7 +45,7 @@ func (repo *GamblerRepository) GetAll(ctx context.Context) (gamblers []entities.
 		SELECT
 			*
 		FROM
-			gamblers
+			gambler
 		WHERE
 			deleted_at IS NULL
 		`)
@@ -61,7 +61,7 @@ func (repo *GamblerRepository) GetAll(ctx context.Context) (gamblers []entities.
 		var gambler entities.Gambler
 		err := rows.Scan(
 			&gambler.ID,
-			&gambler.GamblerName,
+			&gambler.Name,
 			&gambler.Document,
 			&gambler.DocumentType,
 			&gambler.BirthDate,
@@ -87,17 +87,17 @@ func (repo *GamblerRepository) GetByID(ctx context.Context, id int64) (gambler e
 		SELECT
 			*
 		FROM
-			gamblers
+			gambler
 		WHERE
-			gamblers.id = ?
-			AND gamblers.deleted_at IS NULL
+			gambler.id = ?
+			AND gambler.deleted_at IS NULL
 		`,
 		id,
 	)
 
 	err = row.Scan(
 		&gambler.ID,
-		&gambler.GamblerName,
+		&gambler.Name,
 		&gambler.Document,
 		&gambler.DocumentType,
 		&gambler.BirthDate,
@@ -111,17 +111,17 @@ func (repo *GamblerRepository) GetByID(ctx context.Context, id int64) (gambler e
 func (repo *GamblerRepository) Update(ctx context.Context, gambler entities.Gambler) (rowsAffected int64, err error) {
 	result, err := repo.conn.ExecContext(ctx, `
 		UPDATE
-			gamblers
+			gambler
 		SET
-			gambler_name = ?,
+			name = ?,
 			document = ?,
 			document_type = ?,
 			birth_date = ?
 		WHERE
 			id = ?
-			AND gamblers.deleted_at IS NULL
+			AND gambler.deleted_at IS NULL
 		`,
-		gambler.GamblerName, gambler.Document, gambler.DocumentType, gambler.BirthDate, gambler.ID,
+		gambler.Name, gambler.Document, gambler.DocumentType, gambler.BirthDate, gambler.ID,
 	)
 
 	if err != nil {
@@ -134,7 +134,7 @@ func (repo *GamblerRepository) Update(ctx context.Context, gambler entities.Gamb
 func (repo *GamblerRepository) Delete(ctx context.Context, gambler entities.Gambler) (rowsAffected int64, err error) {
 	result, err := repo.conn.ExecContext(ctx, `
 		UPDATE
-			gamblers
+			gambler
 		SET
 			deleted_at = ?
 		WHERE

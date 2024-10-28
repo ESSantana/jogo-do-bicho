@@ -76,7 +76,6 @@ func (bg *BetGroup) IsNumberPartOfGroup(input int) bool {
 	}
 	return false
 }
-
 type Bet struct {
 	ID             int64       `json:"id,omitempty"`
 	GamblerID      int64       `json:"gambler_id"`

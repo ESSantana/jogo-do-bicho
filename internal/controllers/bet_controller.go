@@ -143,37 +143,6 @@ func (ctlr *BetController) Update(response http.ResponseWriter, request *http.Re
 	utils.CreateResponse(&response, http.StatusCreated, responseBody)
 }
 
-func (ctlr *BetController) Delete(response http.ResponseWriter, request *http.Request) {
-	ctlr.getService()
-	ctx, cancel := context.WithTimeout(request.Context(), 1*time.Second)
-	defer cancel()
-
-	queryValues := request.URL.Query()
-	unparsedID := queryValues["id"][0]
-	id, err := strconv.Atoi(unparsedID)
-	if err != nil {
-		responseBody := map[string]interface{}{
-			"message": "id format not supported",
-		}
-		utils.CreateResponse(&response, http.StatusBadRequest, responseBody)
-		return
-	}
-
-	deleted, err := betService.Delete(ctx, int64(id))
-	if err != nil {
-		responseBody := map[string]interface{}{
-			"message": "error deleting bet",
-		}
-		utils.CreateResponse(&response, http.StatusInternalServerError, responseBody)
-		return
-	}
-
-	responseBody := map[string]interface{}{
-		"deleted": deleted,
-	}
-	utils.CreateResponse(&response, http.StatusOK, responseBody)
-}
-
 func (ctlr *BetController) getService() {
 	if betService != nil {
 		return

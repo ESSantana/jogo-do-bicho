@@ -11,5 +11,4 @@ type BetRepository interface {
 	GetAll(ctx context.Context) (bets []entities.Bet, err error)
 	GetByID(ctx context.Context, id int64) (bet entities.Bet, err error)
 	Update(ctx context.Context, bet entities.Bet) (rowsAffected int64, err error)
-	Delete(ctx context.Context, bet entities.Bet) (rowsAffected int64, err error)
 }

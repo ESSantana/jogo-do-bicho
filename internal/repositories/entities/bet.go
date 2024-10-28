@@ -2,13 +2,33 @@ package entities
 
 import "time"
 
+type BetType = string
+
+const (
+	Thousands    = "thousands"
+	Hundreds     = "hundreds"
+	Dozens       = "dozens"
+	Group        = "group"
+	DoubleDozens = "double_dozens"
+	DoubleGroup  = "double_group"
+)
+
+type BetModifier = string
+
+const (
+	OnTop      = "on_top"
+	Surrounded = "surrounded"
+)
+
 type Bet struct {
-	ID        int64      `db:"id" json:"id"`
-	GamblerID int64      `db:"gambler_id" json:"gambler_id"`
-	BetType   string     `db:"bet_type" json:"bet_type"`
-	BetPrice  float64    `db:"bet_price" json:"bet_price"`
-	BetChoice string     `db:"bet_choice" json:"bet_choice"`
-	DeletedAt *time.Time `db:"deleted_at" json:"deleted_at"`
+	ID             int64       `db:"id" json:"id"`
+	GamblerID      int64       `db:"gambler_id" json:"gambler_id"`
+	RaffleID       int64       `db:"raffle_id" json:"raffle_id"`
+	BetType        BetType     `db:"bet_type" json:"bet_type"`
+	BetModifier    BetModifier `db:"bet_modifier" json:"bet_modifier"`
+	BetPrice       float64     `db:"bet_price" json:"bet_price"`
+	BetCombination string      `db:"bet_combination" json:"bet_combination"`
+	CreatedAt      *time.Time  `db:"created_at" json:"created_at"`
 }
 
 func (b *Bet) IsValid() bool {

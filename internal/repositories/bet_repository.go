@@ -22,11 +22,19 @@ func newBetRepository(conn *sql.DB) contracts.BetRepository {
 func (repo *BetRepository) Create(ctx context.Context, bet entities.Bet) (persistedID int64, err error) {
 	result, err := repo.conn.ExecContext(ctx, `
 		INSERT INTO
-			bets (gambler_id, bet_type, bet_price, bet_choice)
+			bet (
+				gambler_id,
+				raffle_id,
+				bet_type,
+				bet_modifier,
+				bet_price,
+				bet_combination,
+				created_at
+			)
 		VALUES
-			(?, ?, ?, ?);
+			(?, ?, ?, ?, ?, ?, ?);
 	`,
-		bet.GamblerID, bet.BetType, bet.BetPrice, bet.BetChoice,
+		bet.GamblerID, bet.RaffleID, bet.BetType, bet.BetModifier, bet.BetPrice, bet.BetCombination, bet.CreatedAt,
 	)
 
 	if err != nil {
@@ -45,9 +53,9 @@ func (repo *BetRepository) GetAll(ctx context.Context) (bets []entities.Bet, err
 		SELECT
 			*
 		FROM
-			bets
+			bet
 		WHERE
-			bets.deleted_at IS NULL
+			bet.deleted_at IS NULL
 		`)
 
 	if err != nil {
@@ -62,10 +70,12 @@ func (repo *BetRepository) GetAll(ctx context.Context) (bets []entities.Bet, err
 		err := rows.Scan(
 			&bet.ID,
 			&bet.GamblerID,
+			&bet.RaffleID,
 			&bet.BetType,
+			&bet.BetModifier,
 			&bet.BetPrice,
-			&bet.BetChoice,
-			&bet.DeletedAt,
+			&bet.BetCombination,
+			&bet.CreatedAt,
 		)
 		if err != nil {
 			return bets, err
@@ -86,9 +96,9 @@ func (repo *BetRepository) GetByID(ctx context.Context, id int64) (bet entities.
 		SELECT
 			*
 		FROM
-			bets
+			bet
 		WHERE
-			bets.id = ?
+			bet.id = ?
 			AND bets.deleted_at IS NULL
 		`,
 		id,
@@ -97,10 +107,12 @@ func (repo *BetRepository) GetByID(ctx context.Context, id int64) (bet entities.
 	err = row.Scan(
 		&bet.ID,
 		&bet.GamblerID,
+		&bet.RaffleID,
 		&bet.BetType,
+		&bet.BetModifier,
 		&bet.BetPrice,
-		&bet.BetChoice,
-		&bet.DeletedAt,
+		&bet.BetCombination,
+		&bet.CreatedAt,
 	)
 
 	return bet, err
@@ -109,35 +121,17 @@ func (repo *BetRepository) GetByID(ctx context.Context, id int64) (bet entities.
 func (repo *BetRepository) Update(ctx context.Context, bet entities.Bet) (rowsAffected int64, err error) {
 	result, err := repo.conn.ExecContext(ctx, `
 		UPDATE
-			bets
+			bet
 		SET
 			bet_type = ?,
+			bet_modifier = ?,
 			bet_price = ?,
-			bet_choice = ?
+			bet_combination = ?
 		WHERE
 			id = ?
-			AND bets.deleted_at IS NULL
+			AND bet.deleted_at IS NULL
 		`,
-		bet.BetType, bet.BetPrice, bet.BetChoice, bet.ID,
-	)
-
-	if err != nil {
-		return rowsAffected, err
-	}
-
-	return result.RowsAffected()
-}
-
-func (repo *BetRepository) Delete(ctx context.Context, bet entities.Bet) (rowsAffected int64, err error) {
-	result, err := repo.conn.ExecContext(ctx, `
-		UPDATE
-			bets
-		SET
-			deleted_at = ?
-		WHERE
-			id = ?
-		`,
-		bet.DeletedAt, bet.ID,
+		bet.BetType, bet.BetPrice, bet.BetCombination, bet.ID,
 	)
 
 	if err != nil {

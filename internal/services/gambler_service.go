@@ -30,7 +30,7 @@ func (svc *GamblerService) Create(ctx context.Context, gambler dto.Gambler) (cre
 
 	now := time.Now()
 	persistedID, err := gamblerRepo.Create(ctx, entities.Gambler{
-		GamblerName:  gambler.Name,
+		Name:         gambler.Name,
 		Document:     gambler.Document,
 		DocumentType: entities.GamblersDocumentType(gambler.DocumentType),
 		BirthDate:    &gambler.BirthDate,
@@ -64,7 +64,7 @@ func (svc *GamblerService) GetAll(ctx context.Context) (allGamblers []vm.Gambler
 
 		allGamblers = append(allGamblers, vm.Gambler{
 			ID:           item.ID,
-			Name:         item.GamblerName,
+			Name:         item.Name,
 			Document:     item.Document,
 			DocumentType: string(item.DocumentType),
 			BirthDate:    *item.BirthDate,
@@ -87,7 +87,7 @@ func (svc *GamblerService) GetByID(ctx context.Context, id int64) (gambler vm.Ga
 
 	return vm.Gambler{
 		ID:           persisted.ID,
-		Name:         persisted.GamblerName,
+		Name:         persisted.Name,
 		Document:     persisted.Document,
 		DocumentType: string(persisted.DocumentType),
 		BirthDate:    *persisted.BirthDate,
@@ -110,7 +110,7 @@ func (svc *GamblerService) Update(ctx context.Context, gambler dto.Gambler) (upd
 
 	rowsAffected, err := gamblerRepo.Update(ctx, entities.Gambler{
 		ID:           gambler.ID,
-		GamblerName:  gambler.Name,
+		Name:         gambler.Name,
 		Document:     gambler.Document,
 		DocumentType: entities.GamblersDocumentType(gambler.DocumentType),
 		BirthDate:    &gambler.BirthDate,

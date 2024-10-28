@@ -19,7 +19,6 @@ func configBet(router *chi.Mux, logger log.Logger, serviceManager svc_contracts.
 	router.Get("/bet/{id}", controller.Get)
 	router.Post("/bet", controller.Create)
 	router.Put("/bet", controller.Update)
-	router.Delete("/bet", controller.Delete)
 }
 
 func configGambler(router *chi.Mux, logger log.Logger, serviceManager svc_contracts.ServiceManager) {
