@@ -2,11 +2,11 @@ package services
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/ESSantana/jogo-do-bicho/internal/domain/dto"
 	"github.com/ESSantana/jogo-do-bicho/internal/domain/errors"
-	vm "github.com/ESSantana/jogo-do-bicho/internal/domain/viewmodel"
 	repo_contracts "github.com/ESSantana/jogo-do-bicho/internal/repositories/contracts"
 	"github.com/ESSantana/jogo-do-bicho/internal/repositories/entities"
 	"github.com/ESSantana/jogo-do-bicho/internal/services/contracts"
@@ -25,7 +25,7 @@ func newGamblerService(logger log.Logger, repoManager repo_contracts.RepositoryM
 	}
 }
 
-func (svc *GamblerService) Create(ctx context.Context, gambler dto.Gambler) (createdGambler vm.Gambler, err error) {
+func (svc *GamblerService) Create(ctx context.Context, gambler dto.Gambler) (createdGambler dto.Gambler, err error) {
 	gamblerRepo := svc.repoManager.NewGamblerRepository()
 
 	now := time.Now()
@@ -34,6 +34,7 @@ func (svc *GamblerService) Create(ctx context.Context, gambler dto.Gambler) (cre
 		Document:     gambler.Document,
 		DocumentType: entities.GamblersDocumentType(gambler.DocumentType),
 		BirthDate:    &gambler.BirthDate,
+		CreatedAt:    &now,
 		UpdatedAt:    &now,
 	})
 
@@ -41,7 +42,7 @@ func (svc *GamblerService) Create(ctx context.Context, gambler dto.Gambler) (cre
 		return createdGambler, err
 	}
 
-	returnGambler := vm.Gambler{
+	returnGambler := dto.Gambler{
 		ID:           persistedID,
 		Name:         gambler.Name,
 		Document:     gambler.Document,
@@ -52,17 +53,17 @@ func (svc *GamblerService) Create(ctx context.Context, gambler dto.Gambler) (cre
 	return returnGambler, err
 }
 
-func (svc *GamblerService) GetAll(ctx context.Context) (allGamblers []vm.Gambler, err error) {
+func (svc *GamblerService) GetAll(ctx context.Context) (allGamblers []dto.Gambler, err error) {
 	gamblerRepo := svc.repoManager.NewGamblerRepository()
 	gamblers, err := gamblerRepo.GetAll(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	allGamblers = make([]vm.Gambler, 0)
+	allGamblers = make([]dto.Gambler, 0)
 	for _, item := range gamblers {
 
-		allGamblers = append(allGamblers, vm.Gambler{
+		allGamblers = append(allGamblers, dto.Gambler{
 			ID:           item.ID,
 			Name:         item.Name,
 			Document:     item.Document,
@@ -73,25 +74,69 @@ func (svc *GamblerService) GetAll(ctx context.Context) (allGamblers []vm.Gambler
 	return allGamblers, nil
 }
 
-func (svc *GamblerService) GetByID(ctx context.Context, id int64) (gambler vm.Gambler, err error) {
-	gamblerRepo := svc.repoManager.NewGamblerRepository()
+func (svc *GamblerService) GetByID(ctx context.Context, id int64) (gambler dto.Gambler, err error) {
+	var wg sync.WaitGroup
 
-	persisted, err := gamblerRepo.GetByID(ctx, id)
-	if err != nil {
-		return gambler, err
+	gamblerChan := make(chan dto.Gambler)
+	betsChan := make(chan []dto.Bet)
+
+	getGamblerByID := func() {
+		wg.Add(1)
+		defer wg.Done()
+
+		gamblerRepo := svc.repoManager.NewGamblerRepository()
+		persisted, err := gamblerRepo.GetByID(ctx, id)
+		if err != nil {
+			return
+		}
+		if persisted.IsValid() {
+			gamblerChan <- dto.Gambler{
+				ID:           persisted.ID,
+				Name:         persisted.Name,
+				Document:     persisted.Document,
+				DocumentType: string(persisted.DocumentType),
+				BirthDate:    *persisted.BirthDate,
+			}
+		}
 	}
 
-	if !persisted.IsValid() {
-		return gambler, errors.NewNotFoundError("registro não encontrado")
+	getBetByGamblerID := func() {
+		wg.Add(1)
+		defer wg.Done()
+
+		betRepo := svc.repoManager.NewBetRepository()
+		bets, err := betRepo.GetAllByGamblerID(ctx, id)
+		if err != nil {
+			return
+		}
+
+		betsVM := make([]dto.Bet, 0)
+		for _, bet := range bets {
+			betsVM = append(betsVM, dto.Bet{
+				ID:        bet.ID,
+				GamblerID: bet.GamblerID,
+				RaffleID:  bet.RaffleID,
+				BetType: dto.BetType{
+					Slug: dto.BetTypeSlug(bet.BetType),
+				},
+				BetModifier:    string(bet.BetModifier),
+				BetPrice:       bet.BetPrice,
+				BetCombination: bet.GetCombinationIntValues(),
+				CreatedAt:      *bet.CreatedAt,
+			})
+		}
+		betsChan <- betsVM
 	}
 
-	return vm.Gambler{
-		ID:           persisted.ID,
-		Name:         persisted.Name,
-		Document:     persisted.Document,
-		DocumentType: string(persisted.DocumentType),
-		BirthDate:    *persisted.BirthDate,
-	}, nil
+	go getGamblerByID()
+	go getBetByGamblerID()
+
+	wg.Wait()
+
+	gambler = <-gamblerChan
+	gambler.Bets = <-betsChan
+
+	return gambler, nil
 }
 
 func (svc *GamblerService) Update(ctx context.Context, gambler dto.Gambler) (updated bool, err error) {

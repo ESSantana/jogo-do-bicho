@@ -22,11 +22,11 @@ func newGamblerRepository(conn *sql.DB) contracts.GamblerRepository {
 func (repo *GamblerRepository) Create(ctx context.Context, gambler entities.Gambler) (persistedID int64, err error) {
 	result, err := repo.conn.ExecContext(ctx, `
 		INSERT INTO
-			gambler (name, document, document_type, birth_date)
+			gambler (name, document, document_type, birth_date, updated_at)
 		VALUES
-			(?, ?, ?, ?)
+			(?, ?, ?, ?, ?)
 	`,
-		gambler.Name, gambler.Document, gambler.DocumentType, gambler.BirthDate,
+		gambler.Name, gambler.Document, gambler.DocumentType, gambler.BirthDate, gambler.UpdatedAt,
 	)
 
 	if err != nil {
@@ -65,6 +65,7 @@ func (repo *GamblerRepository) GetAll(ctx context.Context) (gamblers []entities.
 			&gambler.Document,
 			&gambler.DocumentType,
 			&gambler.BirthDate,
+			&gambler.CreatedAt,
 			&gambler.UpdatedAt,
 			&gambler.DeletedAt,
 		)
@@ -101,6 +102,7 @@ func (repo *GamblerRepository) GetByID(ctx context.Context, id int64) (gambler e
 		&gambler.Document,
 		&gambler.DocumentType,
 		&gambler.BirthDate,
+		&gambler.CreatedAt,
 		&gambler.UpdatedAt,
 		&gambler.DeletedAt,
 	)
@@ -117,11 +119,12 @@ func (repo *GamblerRepository) Update(ctx context.Context, gambler entities.Gamb
 			document = ?,
 			document_type = ?,
 			birth_date = ?
+			updated_at = ?,
 		WHERE
 			id = ?
 			AND gambler.deleted_at IS NULL
 		`,
-		gambler.Name, gambler.Document, gambler.DocumentType, gambler.BirthDate, gambler.ID,
+		gambler.Name, gambler.Document, gambler.DocumentType, gambler.BirthDate, gambler.UpdatedAt, gambler.ID,
 	)
 
 	if err != nil {

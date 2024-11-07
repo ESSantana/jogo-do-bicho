@@ -17,7 +17,7 @@ func CreateResponse(response *http.ResponseWriter, statusCode int, body map[stri
 	(*response).Header().Set("Content-Type", "application/json")
 }
 
-func ReadBody[T any](request *http.Request, response http.ResponseWriter) T {
+func ReadBody[T any](request *http.Request, response http.ResponseWriter) (output T) {
 	var bodyRequest T
 	body, err := io.ReadAll(request.Body)
 	if err != nil {

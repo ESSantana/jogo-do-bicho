@@ -54,9 +54,52 @@ func (repo *BetRepository) GetAll(ctx context.Context) (bets []entities.Bet, err
 			*
 		FROM
 			bet
-		WHERE
-			bet.deleted_at IS NULL
 		`)
+
+	if err != nil {
+		return bets, err
+	}
+
+	defer rows.Close()
+	bets = []entities.Bet{}
+
+	for rows.Next() {
+		var bet entities.Bet
+		err := rows.Scan(
+			&bet.ID,
+			&bet.GamblerID,
+			&bet.RaffleID,
+			&bet.BetType,
+			&bet.BetModifier,
+			&bet.BetPrice,
+			&bet.BetCombination,
+			&bet.CreatedAt,
+		)
+		if err != nil {
+			return bets, err
+		}
+
+		bets = append(bets, bet)
+	}
+
+	if err = rows.Err(); err != nil {
+		return bets, err
+	}
+
+	return bets, nil
+}
+
+func (repo *BetRepository) GetAllByGamblerID(ctx context.Context, gamblerID int64) (bets []entities.Bet, err error) {
+	rows, err := repo.conn.QueryContext(ctx, `
+		SELECT
+			*
+		FROM
+			bet
+		WHERE
+			bet.gambler_id = ?
+		`,
+		gamblerID,
+	)
 
 	if err != nil {
 		return bets, err
@@ -99,7 +142,6 @@ func (repo *BetRepository) GetByID(ctx context.Context, id int64) (bet entities.
 			bet
 		WHERE
 			bet.id = ?
-			AND bets.deleted_at IS NULL
 		`,
 		id,
 	)
@@ -129,7 +171,6 @@ func (repo *BetRepository) Update(ctx context.Context, bet entities.Bet) (rowsAf
 			bet_combination = ?
 		WHERE
 			id = ?
-			AND bet.deleted_at IS NULL
 		`,
 		bet.BetType, bet.BetPrice, bet.BetCombination, bet.ID,
 	)

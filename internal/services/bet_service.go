@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/ESSantana/jogo-do-bicho/internal/domain/dto"
 	"github.com/ESSantana/jogo-do-bicho/internal/domain/errors"
-	vm "github.com/ESSantana/jogo-do-bicho/internal/domain/viewmodel"
 	repo_contracts "github.com/ESSantana/jogo-do-bicho/internal/repositories/contracts"
 	"github.com/ESSantana/jogo-do-bicho/internal/repositories/entities"
 	"github.com/ESSantana/jogo-do-bicho/internal/services/contracts"
@@ -26,63 +26,69 @@ func newBetService(logger log.Logger, repoManager repo_contracts.RepositoryManag
 	}
 }
 
-func (svc *BetService) Create(ctx context.Context, bet dto.Bet) (createdBet vm.Bet, err error) {
+func (svc *BetService) Create(ctx context.Context, bet dto.Bet) (createdBet dto.Bet, err error) {
 	err = bet.Validate()
 	if err != nil {
 		return createdBet, errors.NewValidationError(err.Error())
 	}
 
-	betRepo := svc.repoManager.NewBetRepository()
+	raffleRepo := svc.repoManager.NewRaffleRepository()
+	currentRaffle, err := raffleRepo.GetCurrentEdition(ctx)
+	if err != nil {
+		return createdBet, errors.NewSQLError("erro ao buscar edição do sorteio vigente")
+	}
 
+	betRepo := svc.repoManager.NewBetRepository()
 	var comb []string
 	for _, n := range bet.BetCombination {
 		comb = append(comb, fmt.Sprint(n))
 	}
 
+	now := time.Now()
 	persistedID, err := betRepo.Create(ctx, entities.Bet{
 		GamblerID:      bet.GamblerID,
-		BetType:        string(bet.BetType.Slug),
+		RaffleID:       currentRaffle.ID,
+		BetModifier:    entities.BetModifier(bet.BetModifier),
+		BetType:        entities.BetType(bet.BetType.Slug),
 		BetPrice:       bet.BetPrice,
 		BetCombination: strings.Join(comb, ","),
+		CreatedAt:      &now,
 	})
 
 	if err != nil {
 		return createdBet, err
 	}
-
-	returnBet := vm.Bet{
-		ID:        persistedID,
-		BetType:   createdBet.BetType,
-		BetPrice:  createdBet.BetPrice,
-		BetChoice: createdBet.BetChoice,
-	}
-
-	return returnBet, err
+	bet.ID = persistedID
+	bet.CreatedAt = now
+	return bet, err
 }
 
-func (svc *BetService) GetAll(ctx context.Context) (allBets []vm.Bet, err error) {
+func (svc *BetService) GetAll(ctx context.Context) (allBets []dto.Bet, err error) {
 	betRepo := svc.repoManager.NewBetRepository()
 	items, err := betRepo.GetAll(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	allBets = make([]vm.Bet, 0)
+	allBets = make([]dto.Bet, 0)
 	for _, item := range items {
-		allBets = append(allBets, vm.Bet{
-			ID:        item.ID,
-			BetType:   item.BetType,
-			BetPrice:  item.BetPrice,
-			BetChoice: item.BetCombination,
-			Gambler: &vm.Gambler{
-				ID: item.GamblerID,
+		allBets = append(allBets, dto.Bet{
+			ID: item.ID,
+			BetType: dto.BetType{
+				Slug: dto.BetTypeSlug(item.BetType),
 			},
+			BetPrice:       item.BetPrice,
+			BetCombination: item.GetCombinationIntValues(),
+			GamblerID:      item.GamblerID,
+			RaffleID:       item.RaffleID,
+			BetModifier:    item.BetModifier,
+			CreatedAt:      *item.CreatedAt,
 		})
 	}
 	return allBets, nil
 }
 
-func (svc *BetService) GetByID(ctx context.Context, id int64) (bet vm.Bet, err error) {
+func (svc *BetService) GetByID(ctx context.Context, id int64) (bet dto.Bet, err error) {
 	betRepo := svc.repoManager.NewBetRepository()
 
 	persisted, err := betRepo.GetByID(ctx, bet.ID)
@@ -94,14 +100,17 @@ func (svc *BetService) GetByID(ctx context.Context, id int64) (bet vm.Bet, err e
 		return bet, errors.NewNotFoundError("registro não encontrado")
 	}
 
-	return vm.Bet{
+	return dto.Bet{
 		ID: persisted.ID,
-		Gambler: &vm.Gambler{
-			ID: persisted.GamblerID,
+		BetType: dto.BetType{
+			Slug: dto.BetTypeSlug(persisted.BetType),
 		},
-		BetType:   persisted.BetType,
-		BetPrice:  persisted.BetPrice,
-		BetChoice: persisted.BetCombination,
+		BetPrice:       persisted.BetPrice,
+		BetCombination: persisted.GetCombinationIntValues(),
+		GamblerID:      persisted.GamblerID,
+		RaffleID:       persisted.RaffleID,
+		BetModifier:    persisted.BetModifier,
+		CreatedAt:      *persisted.CreatedAt,
 	}, nil
 }
 
@@ -124,9 +133,12 @@ func (svc *BetService) Update(ctx context.Context, bet dto.Bet) (updated bool, e
 
 	rowsAffected, err := betRepo.Update(ctx, entities.Bet{
 		ID:             bet.ID,
+		GamblerID:      bet.GamblerID,
+		RaffleID:       bet.RaffleID,
+		BetModifier:    entities.BetModifier(bet.BetModifier),
+		BetType:        entities.BetType(bet.BetType.Slug),
 		BetPrice:       bet.BetPrice,
 		BetCombination: strings.Join(comb, ","),
-		BetType:        string(bet.BetType.Slug),
 	})
 
 	if err != nil {

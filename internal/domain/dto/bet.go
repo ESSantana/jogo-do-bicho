@@ -1,6 +1,9 @@
 package dto
 
-import "errors"
+import (
+	"errors"
+	"time"
+)
 
 type BetTypeSlug string
 
@@ -34,7 +37,7 @@ func (bts BetTypeSlug) GetPrizeMultiplier() float64 {
 	}
 }
 
-type BetModifier string
+type BetModifier = string
 
 const (
 	OnTop      BetModifier = "on_top"
@@ -76,15 +79,19 @@ func (bg *BetGroup) IsNumberPartOfGroup(input int) bool {
 	}
 	return false
 }
+
 type Bet struct {
 	ID             int64       `json:"id,omitempty"`
+	RaffleID       int64       `json:"raffle_id"`
 	GamblerID      int64       `json:"gambler_id"`
 	BetPrice       float64     `json:"bet_price"`
 	BetType        BetType     `json:"bet_type"`
 	BetModifier    BetModifier `json:"bet_modifier"`
 	BetCombination []int       `json:"bet_combination"`
+	CreatedAt      time.Time   `json:"created_at"`
 }
 
+//TODO: implementar validação de raffleID
 func (b *Bet) Validate() error {
 	var errorsValidation = []error{}
 

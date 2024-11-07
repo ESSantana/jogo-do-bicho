@@ -1,6 +1,10 @@
 package entities
 
-import "time"
+import (
+	"strconv"
+	"strings"
+	"time"
+)
 
 type BetType = string
 
@@ -33,4 +37,17 @@ type Bet struct {
 
 func (b *Bet) IsValid() bool {
 	return b.ID > 0 && b.GamblerID > 0
+}
+
+func (b *Bet) GetCombinationIntValues() []int {
+	var comb = make([]int, 0)
+	for _, v := range strings.Split(b.BetCombination, ",") {
+		intValue, err := strconv.Atoi(v)
+		if err != nil {
+			return []int{}
+		}
+		comb = append(comb, intValue)
+	}
+
+	return comb
 }

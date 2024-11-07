@@ -1,16 +1,16 @@
-GRANT ALL PRIVILEGES ON *.* TO 'root'@'%';
+GRANT ALL PRIVILEGES ON *.* TO 'root' @'%';
 
 USE `jogo-do-bicho`;
 
 CREATE TABLE IF NOT EXISTS gambler (
-  id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `name` VARCHAR(50) NOT NULL,
-  document VARCHAR(11) NOT NULL,
-  document_type ENUM('cpf', 'rg') NOT NULL,
-  birth_date DATETIME NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP,
-  deleted_at TIMESTAMP
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `name` VARCHAR(50) NOT NULL,
+    document VARCHAR(11) NOT NULL,
+    document_type ENUM('cpf', 'rg') NOT NULL,
+    birth_date DATETIME NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS bet_group (
@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS bet_group (
 CREATE TABLE IF NOT EXISTS raffle (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `edition` INT NOT NULL,
-    created_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL,
     deleted_at TIMESTAMP
 );
@@ -160,3 +160,8 @@ VALUES
     ('VACA', 25, "98"),
     ('VACA', 25, "99"),
     ('VACA', 25, "00");
+
+INSERT INTO
+    raffle(`edition`, updated_at)
+VALUES
+    (1, '2024-10-29');

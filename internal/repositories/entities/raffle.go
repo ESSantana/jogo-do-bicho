@@ -11,9 +11,9 @@ type Raffle struct {
 }
 
 type RaffleDraw struct {
-	ID          int64      `db:"id" json:"id"`
-	RaffleID    int64      `db:"raffle_id" json:"raffle_id"`
-	Order       int        `db:"order" json:"order"`
-	Number      string     `db:"number" json:"number"`
-	CreatedAtAt *time.Time `db:"deleted_at" json:"deleted_at"`
+	ID        int64      `db:"id" json:"id"`
+	RaffleID  int64      `db:"raffle_id" json:"raffle_id"`
+	Order     int        `db:"order" json:"order"`
+	Number    string     `db:"number" json:"number"`
+	CreatedAt *time.Time `db:"created_at" json:"created_at"`
 }

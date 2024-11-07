@@ -11,12 +11,22 @@ var (
 	empty_time = time.Time{}
 )
 
+type GamblersDocumentType = string
+
+const (
+	CPF GamblersDocumentType = "cpf"
+	RG  GamblersDocumentType = "rg"
+)
+
 type Gambler struct {
-	ID           int64     `json:"id"`
-	Name         string    `json:"name"`
-	Document     string    `json:"document"`
-	DocumentType string    `json:"document_type"`
-	BirthDate    time.Time `json:"birth_date"`
+	ID           int64                `json:"id,omitempty"`
+	Name         string               `json:"name"`
+	Document     string               `json:"document"`
+	DocumentType GamblersDocumentType `json:"document_type"`
+	BirthDate    time.Time            `json:"birth_date"`
+	Bets         []Bet                `json:"bets,omitempty"`
+	CreatedAt    *time.Time           `json:"created_at,omitempty"`
+	UpdatedAt    *time.Time           `json:"updated_at,omitempty"`
 }
 
 func (g *Gambler) Validate() error {
@@ -30,8 +40,8 @@ func (g *Gambler) Validate() error {
 		errs = append(errs, custom_errors.NewValidationError("campo documento é obrigatório"))
 	}
 
-	if g.DocumentType == "" {
-		errs = append(errs, custom_errors.NewValidationError("campo tipo de documento é obrigatório"))
+	if g.DocumentType != CPF && g.DocumentType != RG {
+		errs = append(errs, custom_errors.NewValidationError("campo tipo de documento é inválido"))
 	}
 
 	if g.BirthDate == empty_time {

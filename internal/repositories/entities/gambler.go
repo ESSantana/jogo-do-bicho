@@ -5,8 +5,8 @@ import "time"
 type GamblersDocumentType = string
 
 const (
-	CPF GamblersDocumentType = "CPF"
-	RG  GamblersDocumentType = "RG"
+	CPF GamblersDocumentType = "cpf"
+	RG  GamblersDocumentType = "rg"
 )
 
 type Gambler struct {

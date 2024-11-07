@@ -47,3 +47,7 @@ func (manager *RepositoryManager) NewBetRepository() contracts.BetRepository {
 func (manager *RepositoryManager) NewGamblerRepository() contracts.GamblerRepository {
 	return newGamblerRepository(manager.conn)
 }
+
+func (manager *RepositoryManager) NewRaffleRepository() contracts.RaffleRepository {
+	return newRaffleRepository(manager.conn)
+}
